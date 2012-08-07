@@ -1,0 +1,46 @@
+Source: libcad
+Priority: extra
+Maintainer: Cyril ADRIAN <cyril.adrian@gmail.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Section: libs
+Homepage: http://www.github.com/cadrian/libcad
+#Vcs-Git: git://git.debian.org/collab-maint/yacjp.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/yacjp.git;a=summary
+
+Package: libcad-dev
+Section: libdevel
+Architecture: any
+Depends: libcad (= ${binary:Version}), ${misc:Depends}
+Description: Cad's Addenda... by Cyril Adrian (aka Cad)
+ A collection of useful tools, in an object-oriented fashion.
+ .
+ The development files.
+
+Package: libcad-dbg
+Section: debug
+Architecture: any
+Depends: libcad (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: Cad's Addenda... by Cyril Adrian (aka Cad)
+ A collection of useful tools, in an object-oriented fashion.
+ .
+ The debug files.
+
+Package: libcad
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Cad's Addenda... by Cyril Adrian (aka Cad)
+ A collection of useful tools, in an object-oriented fashion.
+ .
+ The main library.
+
+Package: libcad-doc
+Section: doc
+Architecture: any
+Depends: ${misc:Depends}
+Recommends: libcad (= ${binary:Version})
+Description: Cad's Addenda... by Cyril Adrian (aka Cad)
+ A collection of useful tools, in an object-oriented fashion.
+ .
+ The documentation.

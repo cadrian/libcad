@@ -1,0 +1,5 @@
+usr/include/libcad/*
+usr/lib/libcad/lib*.a
+usr/lib/libcad/lib*.so
+#usr/lib/pkgconfig/*
+#usr/share/pkgconfig/*
