@@ -6,7 +6,9 @@ cd $dir
 version=$(head -n 1 Changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
 echo "Version is ${version}."
 
-if grep -vq "^libcad ($version-1)" debian/changelog; then
+if grep -q "^libcad ($version-1)" debian/changelog; then
+    echo "Debian changelog is up to date."
+else
     echo "Generating Debian changelog."
     mv debian/changelog debian/changelog~
     {
@@ -25,7 +27,7 @@ make clean
 echo "Saving orig."
 (
     cd ..
-    tar=libyacjp_${version}.orig.tar.bz2
+    tar=libcad_${version}.orig.tar.bz2
     exec tar cfj $tar --exclude-vcs $(basename $dir)
 )
 
