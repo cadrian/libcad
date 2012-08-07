@@ -7,7 +7,7 @@ split them in a separate library.
 
 ## The libCad philosophy
 
-C does not mean "not object". Actually the whole Cad library is
+C does not mean ``not object''. Actually the whole Cad library is
 built using object-oriented techniques: one may find encapsulation,
 polymorphism, and even some design patterns (composites, factories,
 visitors).

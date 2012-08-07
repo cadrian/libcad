@@ -165,7 +165,7 @@ typedef unsigned int (*cad_hash_keys_hash_fn)   (const void *key);
  * @param[in] key1 the first key
  * @param[in] key2 the second key
  *
- * @post given `hash` as a @ref hash_keys_hash_fn, `(result == 0) => (hash(key1) == hash(key2))`
+ * @post given `hash` as a @ref cad_hash_keys_hash_fn, `(result == 0) => (hash(key1) == hash(key2))`
  *
  * @return 0 if both keys are equal, non-zero otherwise.
  */
@@ -177,7 +177,7 @@ typedef int          (*cad_hash_keys_compare_fn)(const void *key1, const void *k
  * @return a newly allocated key (to be kept in the hash table);
  * the result must be equal to the provided key.
  *
- * @post given `compare` as a @ref hash_keys_compare_fn, `compare(result, key) == 0`
+ * @post given `compare` as a @ref cad_hash_keys_compare_fn, `compare(result, key) == 0`
  *
  */
 typedef const void  *(*cad_hash_keys_clone_fn)  (const void *key);
