@@ -13,14 +13,14 @@ install: run-test doc
 	echo
 	if [ -d $(DESTDIR) ]; then find $(DESTDIR) -name libcad -exec echo {} : \; -exec ls {} \; ; fi
 	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	mkdir -p $(DESTDIR)/usr/lib/libcad
-	mkdir -p $(DESTDIR)/usr/include/libcad
+	mkdir -p $(DESTDIR)/usr/lib
+	mkdir -p $(DESTDIR)/usr/include
 	mkdir -p $(DESTDIR)/usr/share/doc/libcad
-	cp target/libcad.so $(DESTDIR)/usr/lib/libcad/libcad.so.1
-	ln -sf libcad.so.1 $(DESTDIR)/usr/lib/libcad/libcad.so
-	cp target/libcad.a $(DESTDIR)/usr/lib/libcad/libcad.a.1
-	ln -sf libcad.a.1 $(DESTDIR)/usr/lib/libcad/libcad.a
-	cp include/*.h $(DESTDIR)/usr/include/libcad/
+	cp target/libcad.so $(DESTDIR)/usr/lib/libcad.so.1
+	ln -sf libcad.so.1 $(DESTDIR)/usr/lib/libcad.so
+	cp target/libcad.a $(DESTDIR)/usr/lib/libcad.a.1
+	ln -sf libcad.a.1 $(DESTDIR)/usr/lib/libcad.a
+	cp include/*.h $(DESTDIR)/usr/include/
 	cp -a target/*.pdf target/doc/html $(DESTDIR)/usr/share/doc/libcad/
 
 release: debuild
