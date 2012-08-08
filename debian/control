@@ -17,14 +17,14 @@ Description: Cad's Addenda... by Cyril Adrian (aka Cad)
  .
  The development files.
 
-Package: libcad-dbg
-Section: debug
-Architecture: any
-Depends: libcad (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Cad's Addenda... by Cyril Adrian (aka Cad)
- A collection of useful tools, in an object-oriented fashion.
- .
- The debug files.
+#Package: libcad-dbg
+#Section: debug
+#Architecture: any
+#Depends: libcad (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+#Description: Cad's Addenda... by Cyril Adrian (aka Cad)
+# A collection of useful tools, in an object-oriented fashion.
+# .
+# The debug files.
 
 Package: libcad
 Section: libs

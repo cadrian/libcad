@@ -32,4 +32,5 @@ echo "Saving orig."
 )
 
 echo "Starting release."
+export DEVSCRIPTS_CHECK_DIRNAME_LEVEL=0
 exec make release

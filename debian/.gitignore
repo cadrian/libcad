@@ -2,3 +2,4 @@
 *.EX
 files
 *.log
+*.substvars

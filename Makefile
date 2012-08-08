@@ -1,13 +1,14 @@
 OBJ=$(shell ls -1 src/*.c | sed -r 's|^src/|target/out/|g;s|\.c|.o|g')
+PIC_OBJ=$(shell ls -1 src/*.c | sed -r 's|^src/|target/out/|g;s|\.c|.po|g')
 TST=$(shell ls -1 test/test*.c | sed -r 's|^test/|target/test/|g;s|\.c|.run|g')
 
 CFLAGS ?= -g
 RUN ?=
 
-all: run-test doc
+all: run-test lib doc
 	echo
 
-install: run-test doc
+install: run-test lib doc
 	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	env | grep libcad
 	echo
@@ -16,10 +17,10 @@ install: run-test doc
 	mkdir -p $(DESTDIR)/usr/lib
 	mkdir -p $(DESTDIR)/usr/include
 	mkdir -p $(DESTDIR)/usr/share/doc/libcad
-	cp target/libcad.so $(DESTDIR)/usr/lib/libcad.so.1
-	ln -sf libcad.so.1 $(DESTDIR)/usr/lib/libcad.so
-	cp target/libcad.a $(DESTDIR)/usr/lib/libcad.a.1
-	ln -sf libcad.a.1 $(DESTDIR)/usr/lib/libcad.a
+	cp target/libcad.so $(DESTDIR)/usr/lib/libcad.so.$(shell cat target/version)
+	ln -sf libcad.so.$(shell cat target/version) $(DESTDIR)/usr/lib/libcad.so.0
+	ln -sf libcad.so.$(shell cat target/version) $(DESTDIR)/usr/lib/libcad.so
+	cp target/libcad.a $(DESTDIR)/usr/lib/libcad.a
 	cp include/*.h $(DESTDIR)/usr/include/
 	cp -a target/*.pdf target/doc/html $(DESTDIR)/usr/share/doc/libcad/
 
@@ -34,7 +35,7 @@ release: debuild
 	mv ../libcad_$(shell cat target/version)-1_*.changes target/dpkg/
 	cd target && tar cfz libcad_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz libcad.so libcad.pdf libcad-htmldoc.tgz dpkg
 
-debuild: run-test doc
+debuild: run-test lib doc
 	debuild -us -uc -v$(shell cat target/version)
 
 lib: target/libcad.so target/libcad.a
@@ -42,7 +43,7 @@ lib: target/libcad.so target/libcad.a
 doc: target/libcad.pdf target/libcad-htmldoc.tgz
 	echo
 
-run-test: lib $(TST)
+run-test: target/libcad.so.0 $(TST)
 	echo
 
 clean:
@@ -63,10 +64,14 @@ target/test: $(shell find test/data -type f)
 	mkdir -p target/test
 	cp -a test/data/* target/out/data/; done
 
-target/libcad.so: target $(OBJ)
+target/libcad.so: target $(PIC_OBJ)
 	echo "Linking shared library: $@"
-	$(CC) -shared -o $@ -lm $(OBJ)
+	$(CC) -shared -fPIC -Wl,-z,defs,-soname=libcad.so.0 -o $@ $(PIC_OBJ)
+	strip --strip-unneeded $@
 	echo
+
+target/libcad.so.0: target/libcad.so
+	cd target && ln -sf libcad.so libcad.so.0
 
 target/libcad.a: target $(OBJ)
 	echo "Linking static library: $@"
@@ -108,6 +113,10 @@ target/doc/.doc: Doxyfile gendoc.sh target $(shell ls -1 src/*.c include/*.h doc
 
 target/out/%.o: src/%.c include/*.h
 	echo "Compiling library object: $<"
+	$(CC) $(CFLAGS) -fvisibility=hidden -I include -c $< -o $@
+
+target/out/%.po: src/%.c include/*.h
+	echo "Compiling PIC library object: $<"
 	$(CC) $(CFLAGS) -fPIC -fvisibility=hidden -I include -c $< -o $@
 
 target/out/%.exe: test/%.c test/*.h target/libcad.so
