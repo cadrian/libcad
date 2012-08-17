@@ -1,7 +1,12 @@
 #!/bin/dash
 
-dir=$(cd $(dirname $(readlink -f $0)); pwd)
-cd $dir
+if [ -e debian/control ]; then
+    echo "Debian control found"
+    dir=$(pwd)
+else
+    echo "No Debian control found; not in the right directory?" >&2
+    exit 1
+fi
 
 version=$(head -n 1 Changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
 major=$(echo $version | egrep -o '^[0-9]+')

@@ -20,6 +20,7 @@ install: run-test lib doc
 	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	mkdir -p $(DESTDIR)/usr/lib
 	mkdir -p $(DESTDIR)/usr/include
+	mkdir -p $(DESTDIR)/usr/share/$(PROJECT)
 	mkdir -p $(DESTDIR)/usr/share/doc/$(PROJECT)
 	cp target/$(PROJECT).so $(DESTDIR)/usr/lib/$(PROJECT).so.$(VERSION)
 	ln -sf $(PROJECT).so.$(VERSION) $(DESTDIR)/usr/lib/$(PROJECT).so.0
@@ -27,6 +28,7 @@ install: run-test lib doc
 	cp target/$(PROJECT).a $(DESTDIR)/usr/lib/$(PROJECT).a
 	cp include/*.h $(DESTDIR)/usr/include/
 	cp -a target/*.pdf target/doc/html $(DESTDIR)/usr/share/doc/$(PROJECT)/
+	cp Makefile release.sh $(DESTDIR)/usr/share/$(PROJECT)
 
 release: debuild
 	echo Releasing version $(VERSION)
