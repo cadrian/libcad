@@ -12,6 +12,15 @@ built using object-oriented techniques: one may find encapsulation,
 polymorphism, and even some design patterns (composites, factories,
 visitors).
 
+## Project building
+
+libCad is a foundation library for other libraries to build upon. As
+such, not only does it provide common code structures and functions,
+but libCad also provides a build framework (`release.sh` and
+`Makefile`) that should be able to build well-formed Debian packages
+(the library package, a development package, and a documentation
+package).
+
 \mainpage libCad
 
 libCad is free software: you can redistribute it and/or modify it under
