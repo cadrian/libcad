@@ -2,6 +2,9 @@ OBJ=$(shell ls -1 src/*.c | sed -r 's|^src/|target/out/|g;s|\.c|.o|g')
 PIC_OBJ=$(shell ls -1 src/*.c | sed -r 's|^src/|target/out/|g;s|\.c|.po|g')
 TST=$(shell ls -1 test/test*.c | sed -r 's|^test/|target/test/|g;s|\.c|.run|g')
 
+VERSION=$(shell head -n 1 Changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
+MAJOR=$(shell head -n 1 Changelog | egrep -o '[0-9]+')
+
 CFLAGS ?= -g
 RUN ?=
 
@@ -17,26 +20,26 @@ install: run-test lib doc
 	mkdir -p $(DESTDIR)/usr/lib
 	mkdir -p $(DESTDIR)/usr/include
 	mkdir -p $(DESTDIR)/usr/share/doc/libcad
-	cp target/libcad.so $(DESTDIR)/usr/lib/libcad.so.$(shell cat target/version)
-	ln -sf libcad.so.$(shell cat target/version) $(DESTDIR)/usr/lib/libcad.so.0
-	ln -sf libcad.so.$(shell cat target/version) $(DESTDIR)/usr/lib/libcad.so
+	cp target/libcad.so $(DESTDIR)/usr/lib/libcad.so.$(VERSION)
+	ln -sf libcad.so.$(VERSION) $(DESTDIR)/usr/lib/libcad.so.0
+	ln -sf libcad.so.$(VERSION) $(DESTDIR)/usr/lib/libcad.so
 	cp target/libcad.a $(DESTDIR)/usr/lib/libcad.a
 	cp include/*.h $(DESTDIR)/usr/include/
 	cp -a target/*.pdf target/doc/html $(DESTDIR)/usr/share/doc/libcad/
 
 release: debuild
-	echo Releasing version $(shell cat target/version)
+	echo Releasing version $(VERSION)
 	mkdir target/dpkg
-	mv ../libcad*_$(shell cat target/version)-1_*.deb    target/dpkg/
-	mv ../libcad_$(shell cat target/version).orig.*      target/dpkg/
-	mv ../libcad_$(shell cat target/version)-1.debian.*  target/dpkg/
-	mv ../libcad_$(shell cat target/version)-1.dsc       target/dpkg/
-	mv ../libcad_$(shell cat target/version)-1_*.build   target/dpkg/
-	mv ../libcad_$(shell cat target/version)-1_*.changes target/dpkg/
-	cd target && tar cfz libcad_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz libcad.so libcad.pdf libcad-htmldoc.tgz dpkg
+	mv ../libcad*_$(VERSION)-1_*.deb    target/dpkg/
+	mv ../libcad_$(VERSION).orig.*      target/dpkg/
+	mv ../libcad_$(VERSION)-1.debian.*  target/dpkg/
+	mv ../libcad_$(VERSION)-1.dsc       target/dpkg/
+	mv ../libcad_$(VERSION)-1_*.build   target/dpkg/
+	mv ../libcad_$(VERSION)-1_*.changes target/dpkg/
+	cd target && tar cfz libcad_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz libcad.so libcad.pdf libcad-htmldoc.tgz dpkg
 
 debuild: run-test lib doc
-	debuild -us -uc -v$(shell cat target/version)
+	debuild -us -uc -v$(VERSION)
 
 lib: target/libcad.so target/libcad.a
 
@@ -86,7 +89,7 @@ target/doc/latex/refman.pdf: target/doc/latex/Makefile target/doc/latex/version.
 	echo "  Building PDF"
 	find target/doc/latex -name \*.tex -exec sed 's!\\-\\_\\-\\-\\_\\-\\-P\\-U\\-B\\-L\\-I\\-C\\-\\_\\-\\-\\_\\- !!g' -i {} \;
 	sed -r 's!^(\\fancyfoot\[(RE|LO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize \\url{http://www.github.com/cadrian/libcad}}}!' -i target/doc/latex/doxygen.sty
-	sed -r 's!^(\\fancyfoot\[(LE|RO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize Yac\\-J\\-P '$(shell cat target/version)'}}!' -i target/doc/latex/doxygen.sty
+	sed -r 's!^(\\fancyfoot\[(LE|RO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize Yac\\-J\\-P '$(VERSION)'}}!' -i target/doc/latex/doxygen.sty
 	echo '\\renewcommand{\\footrulewidth}{0.4pt}' >> target/doc/latex/doxygen.sty
 	make -C target/doc/latex > target/doc/make.log 2>&1
 
@@ -98,7 +101,7 @@ target/doc/latex/version.tex: target/version
 	cp $< $@
 
 target/version: Changelog
-	head -n 1 $< | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' > $@
+	echo $(VERSION) > $@
 
 target/doc/latex/Makefile: target/doc/.doc
 	sleep 1; touch $@

@@ -4,7 +4,8 @@ dir=$(cd $(dirname $(readlink -f $0)); pwd)
 cd $dir
 
 version=$(head -n 1 Changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
-echo "Version is ${version}."
+major=$(echo $version | egrep -o '^[0-9]+')
+echo "Version is ${version} (major: ${major})."
 
 if grep -q "^libcad ($version-1)" debian/changelog; then
     echo "Debian changelog is up to date."

@@ -11,22 +11,22 @@ Homepage: http://www.github.com/cadrian/libcad
 Package: libcad-dev
 Section: libdevel
 Architecture: any
-Depends: libcad (= ${binary:Version}), ${misc:Depends}
+Depends: libcad0 (= ${binary:Version}), ${misc:Depends}
 Description: Cad's Addenda... by Cyril Adrian (aka Cad)
  A collection of useful tools, in an object-oriented fashion.
  .
  The development files.
 
-#Package: libcad-dbg
+#Package: libcad0-dbg
 #Section: debug
 #Architecture: any
-#Depends: libcad (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+#Depends: libcad0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 #Description: Cad's Addenda... by Cyril Adrian (aka Cad)
 # A collection of useful tools, in an object-oriented fashion.
 # .
 # The debug files.
 
-Package: libcad
+Package: libcad0
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -37,9 +37,9 @@ Description: Cad's Addenda... by Cyril Adrian (aka Cad)
 
 Package: libcad-doc
 Section: doc
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}
-Recommends: libcad (= ${binary:Version})
+Recommends: libcad0 (= ${binary:Version})
 Description: Cad's Addenda... by Cyril Adrian (aka Cad)
  A collection of useful tools, in an object-oriented fashion.
  .
