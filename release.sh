@@ -5,15 +5,16 @@ cd $dir
 
 version=$(head -n 1 Changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
 major=$(echo $version | egrep -o '^[0-9]+')
-echo "Version is ${version} (major: ${major})."
+project=$(awk '/^Source:/ {print $2; exit}' debian/control)
+echo "Project $project -- version is ${version} (major: ${major})."
 
-if grep -q "^libcad ($version-1)" debian/changelog; then
+if grep -q "^$project ($version-1)" debian/changelog; then
     echo "Debian changelog is up to date."
 else
     echo "Generating Debian changelog."
     mv debian/changelog debian/changelog~
     {
-        echo "libcad ($version-1) unstable; urgency=low"
+        echo "$project ($version-1) unstable; urgency=low"
         echo
         echo "  * Release from upstream $version"
         echo
@@ -28,7 +29,7 @@ make clean
 echo "Saving orig."
 (
     cd ..
-    tar=libcad_${version}.orig.tar.bz2
+    tar=${project}_${version}.orig.tar.bz2
     exec tar cfj $tar --exclude-vcs $(basename $dir)
 )
 
