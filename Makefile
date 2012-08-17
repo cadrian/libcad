@@ -4,6 +4,7 @@ TST=$(shell ls -1 test/test*.c | sed -r 's|^test/|target/test/|g;s|\.c|.run|g')
 
 VERSION=$(shell head -n 1 Changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
 MAJOR=$(shell head -n 1 Changelog | egrep -o '[0-9]+')
+PROJECT ?= $(shell awk '/^Source:/ {print $$2; exit}' debian/control)
 
 CFLAGS ?= -g
 RUN ?=
@@ -13,40 +14,40 @@ all: run-test lib doc
 
 install: run-test lib doc
 	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	env | grep libcad
+	env | grep $(PROJECT)
 	echo
-	if [ -d $(DESTDIR) ]; then find $(DESTDIR) -name libcad -exec echo {} : \; -exec ls {} \; ; fi
+	if [ -d $(DESTDIR) ]; then find $(DESTDIR) -name $(PROJECT) -exec echo {} : \; -exec ls {} \; ; fi
 	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	mkdir -p $(DESTDIR)/usr/lib
 	mkdir -p $(DESTDIR)/usr/include
-	mkdir -p $(DESTDIR)/usr/share/doc/libcad
-	cp target/libcad.so $(DESTDIR)/usr/lib/libcad.so.$(VERSION)
-	ln -sf libcad.so.$(VERSION) $(DESTDIR)/usr/lib/libcad.so.0
-	ln -sf libcad.so.$(VERSION) $(DESTDIR)/usr/lib/libcad.so
-	cp target/libcad.a $(DESTDIR)/usr/lib/libcad.a
+	mkdir -p $(DESTDIR)/usr/share/doc/$(PROJECT)
+	cp target/$(PROJECT).so $(DESTDIR)/usr/lib/$(PROJECT).so.$(VERSION)
+	ln -sf $(PROJECT).so.$(VERSION) $(DESTDIR)/usr/lib/$(PROJECT).so.0
+	ln -sf $(PROJECT).so.$(VERSION) $(DESTDIR)/usr/lib/$(PROJECT).so
+	cp target/$(PROJECT).a $(DESTDIR)/usr/lib/$(PROJECT).a
 	cp include/*.h $(DESTDIR)/usr/include/
-	cp -a target/*.pdf target/doc/html $(DESTDIR)/usr/share/doc/libcad/
+	cp -a target/*.pdf target/doc/html $(DESTDIR)/usr/share/doc/$(PROJECT)/
 
 release: debuild
 	echo Releasing version $(VERSION)
 	mkdir target/dpkg
-	mv ../libcad*_$(VERSION)-1_*.deb    target/dpkg/
-	mv ../libcad_$(VERSION).orig.*      target/dpkg/
-	mv ../libcad_$(VERSION)-1.debian.*  target/dpkg/
-	mv ../libcad_$(VERSION)-1.dsc       target/dpkg/
-	mv ../libcad_$(VERSION)-1_*.build   target/dpkg/
-	mv ../libcad_$(VERSION)-1_*.changes target/dpkg/
-	cd target && tar cfz libcad_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz libcad.so libcad.pdf libcad-htmldoc.tgz dpkg
+	mv ../$(PROJECT)*_$(VERSION)-1_*.deb    target/dpkg/
+	mv ../$(PROJECT)_$(VERSION).orig.*      target/dpkg/
+	mv ../$(PROJECT)_$(VERSION)-1.debian.*  target/dpkg/
+	mv ../$(PROJECT)_$(VERSION)-1.dsc       target/dpkg/
+	mv ../$(PROJECT)_$(VERSION)-1_*.build   target/dpkg/
+	mv ../$(PROJECT)_$(VERSION)-1_*.changes target/dpkg/
+	cd target && tar cfz $(PROJECT)_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg
 
 debuild: run-test lib doc
 	debuild -us -uc -v$(VERSION)
 
-lib: target/libcad.so target/libcad.a
+lib: target/$(PROJECT).so target/$(PROJECT).a
 
-doc: target/libcad.pdf target/libcad-htmldoc.tgz
+doc: target/$(PROJECT).pdf target/$(PROJECT)-htmldoc.tgz
 	echo
 
-run-test: target/libcad.so.0 $(TST)
+run-test: target/$(PROJECT).so.0 $(TST)
 	echo
 
 clean:
@@ -67,33 +68,33 @@ target/test: $(shell find test/data -type f)
 	mkdir -p target/test
 	cp -a test/data/* target/out/data/; done
 
-target/libcad.so: target $(PIC_OBJ)
+target/$(PROJECT).so: target $(PIC_OBJ)
 	echo "Linking shared library: $@"
-	$(CC) -shared -fPIC -Wl,-z,defs,-soname=libcad.so.0 -o $@ $(PIC_OBJ)
+	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ)
 	strip --strip-unneeded $@
 	echo
 
-target/libcad.so.0: target/libcad.so
-	cd target && ln -sf libcad.so libcad.so.0
+target/$(PROJECT).so.0: target/$(PROJECT).so
+	cd target && ln -sf $(PROJECT).so $(PROJECT).so.0
 
-target/libcad.a: target $(OBJ)
+target/$(PROJECT).a: target $(OBJ)
 	echo "Linking static library: $@"
 	ar rcs $@ $(OBJ)
 	echo
 
-target/libcad.pdf: target/doc/latex/refman.pdf
+target/$(PROJECT).pdf: target/doc/latex/refman.pdf
 	echo "    Saving PDF"
 	cp $< $@
 
 target/doc/latex/refman.pdf: target/doc/latex/Makefile target/doc/latex/version.tex
 	echo "  Building PDF"
 	find target/doc/latex -name \*.tex -exec sed 's!\\-\\_\\-\\-\\_\\-\\-P\\-U\\-B\\-L\\-I\\-C\\-\\_\\-\\-\\_\\- !!g' -i {} \;
-	sed -r 's!^(\\fancyfoot\[(RE|LO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize \\url{http://www.github.com/cadrian/libcad}}}!' -i target/doc/latex/doxygen.sty
+	sed -r 's!^(\\fancyfoot\[(RE|LO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize \\url{http://www.github.com/cadrian/$(PROJECT)}}}!' -i target/doc/latex/doxygen.sty
 	sed -r 's!^(\\fancyfoot\[(LE|RO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize Yac\\-J\\-P '$(VERSION)'}}!' -i target/doc/latex/doxygen.sty
 	echo '\\renewcommand{\\footrulewidth}{0.4pt}' >> target/doc/latex/doxygen.sty
 	make -C target/doc/latex > target/doc/make.log 2>&1
 
-target/libcad-htmldoc.tgz: target/doc/html/index.html
+target/$(PROJECT)-htmldoc.tgz: target/doc/html/index.html
 	echo "  Building HTML archive"
 	(cd target/doc/html; tar cfz - *) > $@
 
@@ -116,15 +117,15 @@ target/doc/.doc: Doxyfile gendoc.sh target $(shell ls -1 src/*.c include/*.h doc
 
 target/out/%.o: src/%.c include/*.h
 	echo "Compiling library object: $<"
-	$(CC) $(CFLAGS) -fvisibility=hidden -I include -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -I include -c $< -o $@
 
 target/out/%.po: src/%.c include/*.h
 	echo "Compiling PIC library object: $<"
-	$(CC) $(CFLAGS) -fPIC -fvisibility=hidden -I include -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC -fvisibility=hidden -I include -c $< -o $@
 
-target/out/%.exe: test/%.c test/*.h target/libcad.so
+target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	echo "Compiling test: $<"
-	$(CC) $(CFLAGS) -I include -L target -lcad $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -I include -L target -lcad $< -o $@
 
 .PHONY: all lib doc clean run-test release debuild
 .SILENT:

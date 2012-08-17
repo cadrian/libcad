@@ -33,5 +33,12 @@ echo "Saving orig."
 )
 
 echo "Starting release."
+
+export TMPDIR=${TMPDIR:-${TMP:-/tmp}}
+dpkg-buildflags | sed -r 's/^/export /;s/=(.*)$/="\1"/' > $TMPDIR/.flags$$
+. $TMPDIR/.flags$$
+
 export DEVSCRIPTS_CHECK_DIRNAME_LEVEL=0
+export DEB_BUILD_HARDENING=1
+
 exec make release
