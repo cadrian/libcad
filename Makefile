@@ -44,7 +44,7 @@ release: debuild
 	cd target && tar cfz $(PROJECT)_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg
 
 debuild: run-test lib doc
-	debuild -us -uc -v$(VERSION)
+	debuild -us -uc
 
 lib: target/$(PROJECT).so target/$(PROJECT).a
 
