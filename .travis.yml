@@ -1,0 +1,11 @@
+language: c
+compiler:
+  - gcc
+before_install:
+  - "sudo apt-get update -qq"
+install:
+  - "make release"
+script:
+  - "make test"
+cache:
+  apt: true
