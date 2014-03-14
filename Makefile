@@ -41,7 +41,7 @@ release: debuild
 #	mv ../$(PROJECT)_$(VERSION).dsc	      target/dpkg/
 #	mv ../$(PROJECT)_$(VERSION)_*.build   target/dpkg/
 #	mv ../$(PROJECT)_$(VERSION)_*.changes target/dpkg/
-	cd target && tar cfz $(PROJECT)_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg
+	(cd target && tar cfz $(PROJECT)_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
 
 debuild: run-test lib doc
 	debuild -us -uc
@@ -79,7 +79,7 @@ target/$(PROJECT).so: target $(PIC_OBJ)
 	@echo
 
 target/$(PROJECT).so.0: target/$(PROJECT).so
-	cd target && ln -sf $(PROJECT).so $(PROJECT).so.0
+	(cd target && ln -sf $(PROJECT).so $(PROJECT).so.0)
 
 target/$(PROJECT).a: target $(OBJ)
 	@echo "Linking static library: $@"
@@ -128,15 +128,15 @@ target/gendoc.sh:
 
 target/out/%.o: src/%.c include/*.h
 	@echo "Compiling library object: $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -I include -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -I $(shell pwd)/include -c $< -o $@
 
 target/out/%.po: src/%.c include/*.h
 	@echo "Compiling PIC library object: $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC -fvisibility=hidden -I include -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC -fvisibility=hidden -I $(shell pwd)/include -c $< -o $@
 
 target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	@echo "Compiling test: $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -I include -L target $(PROJECT:lib%=-l%) $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -I $(shell pwd)/include -L $(shell pwd)/target $(PROJECT:lib%=-l%) $< -o $@
 
 .PHONY: all lib doc clean run-test release debuild
 #.SILENT:

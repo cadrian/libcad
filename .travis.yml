@@ -6,6 +6,7 @@ before_install:
 install:
   - "make release"
 script:
+  - "ls -l target"
   - "make run-test"
   - "sudo dpkg -i target/dpkg/*.deb"
 cache:
