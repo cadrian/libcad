@@ -1,5 +1,6 @@
 \batchmode
 \documentclass[a4paper,twoside,10pt]{book}
+\usepackage{fancyheadings}
 \usepackage{makeidx}
 \usepackage{natbib}
 \usepackage{graphicx}
@@ -40,13 +41,16 @@
 \usepackage[osfss]{libertine}
 \allsectionsfont{\usefont{T1}{fxb}{bc}{n}\selectfont\color{darkgray}} % force again to override Doxygen defaults
 \renewcommand*\familydefault{\rmdefault}
-\usepackage{libertinelogo}
 \makeindex
 \setcounter{tocdepth}{3}
 
 \renewcommand{\entrylabel}[1]{
    {\parbox[b]{\labelwidth-4pt}{\makebox[0pt][l]{%
    \usefont{T1}{fxb}{bc}{n}\color{darkgray}#1}\vspace{1.5\baselineskip}}}}
+
+%% fancyheader empty
+\newcommand{\clearemptydoublepage} % Style recto-verso
+   {\newpage \thispagestyle{empty} \cleardoublepage}
 
 \begin{document}
 \hypersetup{pageanchor=false,citecolor=blue}
@@ -78,7 +82,7 @@
     \today
 
     \vfill
-    \emph{\small Composed using Libertine fonts, Doxygen, and~\LaTeX~} \libertinelogo
+    \emph{\small Composed using Libertine fonts, Doxygen, and~\LaTeX~}
   \end{center}
 \end{titlepage}
 \clearemptydoublepage

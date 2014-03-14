@@ -2,8 +2,8 @@ OBJ=$(shell ls -1 src/*.c | sed -r 's|^src/|target/out/|g;s|\.c|.o|g')
 PIC_OBJ=$(shell ls -1 src/*.c | sed -r 's|^src/|target/out/|g;s|\.c|.po|g')
 TST=$(shell ls -1 test/test*.c | sed -r 's|^test/|target/test/|g;s|\.c|.run|g')
 
-VERSION=$(shell head -n 1 Changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
-MAJOR=$(shell head -n 1 Changelog | egrep -o '[0-9]+')
+VERSION=$(shell head -n 1 debian/changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
+MAJOR=$(shell echo $VERSION | awk -F. '{print $1}')
 PROJECT ?= $(shell awk '/^Source:/ {print $$2; exit}' debian/control)
 PROJECT_NAME ?= $(shell basename `pwd`)
 
@@ -35,20 +35,20 @@ install: run-test lib doc
 release: debuild
 	@echo "Releasing version $(VERSION)"
 	mkdir target/dpkg
-	mv ../$(PROJECT)*_$(VERSION)-1_*.deb    target/dpkg/
-	mv ../$(PROJECT)_$(VERSION).orig.*      target/dpkg/
-	mv ../$(PROJECT)_$(VERSION)-1.debian.*  target/dpkg/
-	mv ../$(PROJECT)_$(VERSION)-1.dsc       target/dpkg/
-	mv ../$(PROJECT)_$(VERSION)-1_*.build   target/dpkg/
-	mv ../$(PROJECT)_$(VERSION)-1_*.changes target/dpkg/
+	mv ../$(PROJECT)*_$(VERSION)_*.deb    target/dpkg/
+#	mv ../$(PROJECT)_$(VERSION).orig.*    target/dpkg/
+#	mv ../$(PROJECT)_$(VERSION).debian.*  target/dpkg/
+#	mv ../$(PROJECT)_$(VERSION).dsc	      target/dpkg/
+#	mv ../$(PROJECT)_$(VERSION)_*.build   target/dpkg/
+#	mv ../$(PROJECT)_$(VERSION)_*.changes target/dpkg/
 	cd target && tar cfz $(PROJECT)_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg
 
 debuild: run-test lib doc
 	debuild -us -uc
 
-lib: target/$(PROJECT).so target/$(PROJECT).a
+lib: target target/$(PROJECT).so target/$(PROJECT).a
 
-doc: target/$(PROJECT).pdf target/$(PROJECT)-htmldoc.tgz
+doc: target target/$(PROJECT).pdf target/$(PROJECT)-htmldoc.tgz
 	@echo
 
 run-test: target/$(PROJECT).so.0 $(TST)
@@ -62,7 +62,7 @@ clean:
 	@echo "Done."
 
 target/test/%.run: target/out/%.exe target/test
-	@echo "  Running test: $<"
+	@echo "	 Running test: $<"
 	LD_LIBRARY_PATH=target:$(LD_LIBRARY_PATH) $< 2>&1 >$(@:.run=.log) && touch $@ || ( LD_LIBRARY_PATH=target $(RUN) $<; exit 1 )
 
 target:
@@ -87,25 +87,28 @@ target/$(PROJECT).a: target $(OBJ)
 	@echo
 
 target/$(PROJECT).pdf: target/doc/latex/refman.pdf
-	@echo "    Saving PDF"
+	@echo "	   Saving PDF"
 	cp $< $@
 
 target/doc/latex/refman.pdf: target/doc/latex/Makefile target/doc/latex/version.tex
-	@echo "  Building PDF"
+	@echo "	 Building PDF"
 	find target/doc/latex -name \*.tex -exec sed 's!\\-\\_\\-\\-\\_\\-\\-P\\-U\\-B\\-L\\-I\\-C\\-\\_\\-\\-\\_\\- !!g' -i {} \;
 	sed -r 's!^(\\fancyfoot\[(RE|LO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize \\url{http://www.github.com/cadrian/$(PROJECT_NAME)}}}!' -i target/doc/latex/doxygen.sty
 	sed -r 's!^(\\fancyfoot\[(LE|RO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize '$(PROJECT_NAME)' '$(VERSION)'}}!' -i target/doc/latex/doxygen.sty
-	echo '\\renewcommand{\\footrulewidth}{0.4pt}' >> target/doc/latex/doxygen.sty
+#	echo '\\renewcommand{\\footrulewidth}{0.4pt}' >> target/doc/latex/doxygen.sty
+#	remove the \batchmode on the first line:
+	mv target/doc/latex/refman.tex target/doc/latex/refman.tex.orig
+	tail -n +2 target/doc/latex/refman.tex.orig > target/doc/latex/refman.tex
 	make -C target/doc/latex > target/doc/make.log 2>&1
 
 target/$(PROJECT)-htmldoc.tgz: target/doc/html/index.html
-	@echo "  Building HTML archive"
+	@echo "	 Building HTML archive"
 	(cd target/doc/html; tar cfz - *) > $@
 
 target/doc/latex/version.tex: target/version
 	cp $< $@
 
-target/version: Changelog
+target/version: debian/changelog
 	echo $(VERSION) > $@
 
 target/doc/latex/Makefile: target/doc/.doc
@@ -117,6 +120,7 @@ target/doc/html/index.html: target/doc/.doc
 target/doc/.doc: Doxyfile target/gendoc.sh target $(shell ls -1 src/*.c include/*.h doc/*)
 	@echo "Generating documentation"
 	target/gendoc.sh
+	doxygen -u $<
 	doxygen $< && touch $@
 
 target/gendoc.sh:

@@ -8,35 +8,12 @@ else
     exit 1
 fi
 
-version=$(head -n 1 Changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
-major=$(echo $version | egrep -o '^[0-9]+')
+version=$(head -n 1 debian/changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
+major=$(echo $VERSION | awk -F. '{print $1}')
 project=$(awk '/^Source:/ {print $2; exit}' debian/control)
 echo "Project $project -- version is ${version} (major: ${major})."
 
-if grep -q "^$project ($version-1)" debian/changelog; then
-    echo "Debian changelog is up to date."
-else
-    echo "Generating Debian changelog."
-    mv debian/changelog debian/changelog~
-    {
-        echo "$project ($version-1) unstable; urgency=low"
-        echo
-        echo "  * Release from upstream $version"
-        echo
-        echo " -- Cyril ADRIAN <cyril.adrian@gmail.com>  $(date -R)"
-        echo
-        cat debian/changelog~
-    } > debian/changelog
-fi
-
 make clean
-
-echo "Saving orig."
-(
-    cd ..
-    tar=${project}_${version}.orig.tar.bz2
-    exec tar cfj $tar --exclude-vcs $(basename $dir)
-)
 
 echo "Starting release."
 
