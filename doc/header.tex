@@ -37,10 +37,10 @@
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \lstset{language=C++,inputencoding=utf8,basicstyle=\footnotesize,breaklines=true,breakatwhitespace=true,tabsize=8,numbers=left }
-\usepackage{inconsolata}
-\usepackage[osfss]{libertine}
+%\usepackage{inconsolata}
+%\usepackage[osfss]{libertine}
 \allsectionsfont{\usefont{T1}{fxb}{bc}{n}\selectfont\color{darkgray}} % force again to override Doxygen defaults
-\renewcommand*\familydefault{\rmdefault}
+%\renewcommand*\familydefault{\rmdefault}
 \makeindex
 \setcounter{tocdepth}{3}
 
@@ -49,7 +49,7 @@
    \usefont{T1}{fxb}{bc}{n}\color{darkgray}#1}\vspace{1.5\baselineskip}}}}
 
 %% fancyheader empty
-\newcommand{\clearemptydoublepage} % Style recto-verso
+\providecommand{\clearemptydoublepage} % Style recto-verso
    {\newpage \thispagestyle{empty} \cleardoublepage}
 
 \begin{document}
