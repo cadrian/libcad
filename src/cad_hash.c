@@ -241,7 +241,7 @@ static cad_hash_t fn = {
      (cad_hash_del_fn    )del    ,
 };
 
-__PUBLIC__ cad_hash_t *cad_hash_new(cad_memory_t memory, cad_hash_keys_t keys) {
+__PUBLIC__ cad_hash_t *cad_new_hash(cad_memory_t memory, cad_hash_keys_t keys) {
      struct cad_hash_impl *result = (struct cad_hash_impl *)memory.malloc(sizeof(struct cad_hash_impl));
      if (!result) return NULL;
      result->fn      = fn;

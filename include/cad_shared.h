@@ -48,7 +48,7 @@ typedef void *(*cad_malloc_fn)(size_t size);
  *
  * @param[in] the pointer to deallocate.
  */
-typedef void  (*cad_free_fn)(void *ptr);
+typedef void (*cad_free_fn)(void *ptr);
 
 /**
  * The user must provide an object providing this memory manager
@@ -56,15 +56,15 @@ typedef void  (*cad_free_fn)(void *ptr);
  * of memory.
  */
 typedef struct cad_memory {
-     /**
-      * @see cad_malloc_fn
-      */
-     cad_malloc_fn malloc;
+   /**
+    * @see cad_malloc_fn
+    */
+   cad_malloc_fn malloc;
 
-     /**
-      * @see cad_free_fn
-      */
-     cad_free_fn   free;
+   /**
+    * @see cad_free_fn
+    */
+   cad_free_fn   free;
 } cad_memory_t;
 
 /**

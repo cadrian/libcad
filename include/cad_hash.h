@@ -60,7 +60,7 @@ typedef void (*cad_hash_iterator_fn)(void *hash, int index, const void *key, voi
  * @param[in] this the target hash table
  *
  */
-typedef void         (*cad_hash_free_fn)   (cad_hash_t *this);
+typedef void (*cad_hash_free_fn) (cad_hash_t *this);
 
 /**
  * Counts the number of elements in the hash table.
@@ -70,7 +70,7 @@ typedef void         (*cad_hash_free_fn)   (cad_hash_t *this);
  * @return the number of elements.
  *
  */
-typedef unsigned int (*cad_hash_count_fn)  (cad_hash_t *this);
+typedef unsigned int (*cad_hash_count_fn) (cad_hash_t *this);
 
 /**
  * Iterates through all the hash table's keys. Calls the provided
@@ -81,7 +81,7 @@ typedef unsigned int (*cad_hash_count_fn)  (cad_hash_t *this);
  * @param[in] data a user data pointer passed to the `iterator` function
  *
  */
-typedef void         (*cad_hash_iterate_fn)(cad_hash_t *this, cad_hash_iterator_fn iterator, void *data);
+typedef void (*cad_hash_iterate_fn)(cad_hash_t *this, cad_hash_iterator_fn iterator, void *data);
 
 /**
  * Retrieves a value associated with the given `key`.
@@ -92,7 +92,7 @@ typedef void         (*cad_hash_iterate_fn)(cad_hash_t *this, cad_hash_iterator_
  * @return the value associated to the provided key, `NULL` if not found.
  *
  */
-typedef void        *(*cad_hash_get_fn)    (cad_hash_t *this, const void *key);
+typedef void *(*cad_hash_get_fn) (cad_hash_t *this, const void *key);
 
 /**
  * Associates a `value` to a `key`. If not already set, the `key` is
@@ -107,7 +107,7 @@ typedef void        *(*cad_hash_get_fn)    (cad_hash_t *this, const void *key);
  * @return the previous value, or NULL
  *
  */
-typedef void        *(*cad_hash_set_fn)    (cad_hash_t *this, const void *key, void *value);
+typedef void *(*cad_hash_set_fn) (cad_hash_t *this, const void *key, void *value);
 
 /**
  * Removes both a `key` and its associated value from the hash table.
@@ -118,7 +118,7 @@ typedef void        *(*cad_hash_set_fn)    (cad_hash_t *this, const void *key, v
  * @return the previous value, or NULL
  *
  */
-typedef void        *(*cad_hash_del_fn)    (cad_hash_t *this, const void *key);
+typedef void *(*cad_hash_del_fn) (cad_hash_t *this, const void *key);
 
 struct cad_hash_s {
    /**
@@ -157,7 +157,7 @@ struct cad_hash_s {
  *
  * @return the hash value of a key
  */
-typedef unsigned int (*cad_hash_keys_hash_fn)   (const void *key);
+typedef unsigned int (*cad_hash_keys_hash_fn) (const void *key);
 
 /**
  * The user must provide a function that compares both given keys.
@@ -169,7 +169,7 @@ typedef unsigned int (*cad_hash_keys_hash_fn)   (const void *key);
  *
  * @return 0 if both keys are equal, non-zero otherwise.
  */
-typedef int          (*cad_hash_keys_compare_fn)(const void *key1, const void *key2);
+typedef int (*cad_hash_keys_compare_fn)(const void *key1, const void *key2);
 
 /**
  * Clone the key to keep an private one in the hash table.
@@ -180,13 +180,13 @@ typedef int          (*cad_hash_keys_compare_fn)(const void *key1, const void *k
  * @post given `compare` as a @ref cad_hash_keys_compare_fn, `compare(result, key) == 0`
  *
  */
-typedef const void  *(*cad_hash_keys_clone_fn)  (const void *key);
+typedef const void *(*cad_hash_keys_clone_fn) (const void *key);
 
 /**
  * Frees the given `key` which is guaranteed to have been clone()d
  * by the hash table. Used at del() time.
  */
-typedef void         (*cad_hash_keys_free_fn)   (const void *key);
+typedef void (*cad_hash_keys_free_fn) (const void *key);
 
 /**
  * The user must provide an object with this public interface of the
@@ -222,7 +222,7 @@ __PUBLIC__ extern cad_hash_keys_t cad_hash_strings;
  *
  * @return the newly allocated hash table.
  */
-__PUBLIC__ cad_hash_t *cad_hash_new(cad_memory_t memory, cad_hash_keys_t keys);
+__PUBLIC__ cad_hash_t *cad_new_hash(cad_memory_t memory, cad_hash_keys_t keys);
 
 /**
  * @}
