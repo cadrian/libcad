@@ -201,7 +201,13 @@ struct cad_events_s {
    cad_events_free_fn           free;
 };
 
-__PUBLIC__ cad_events_t *cad_new_events_selector(void);
+/**
+ * Allocates and return a new events loop implemented using select(2).
+ *
+ * @return the newly allocated events loop
+ *
+ */
+__PUBLIC__ cad_events_t *cad_new_events_selector(cad_memory_t memory);
 
 /**
  * @}

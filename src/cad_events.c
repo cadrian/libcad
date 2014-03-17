@@ -28,6 +28,7 @@
 
 typedef struct {
    cad_events_t fn;
+   cad_memory_t memory;
    fd_set fd_read, fd_write, fd_exception;
    struct timespec timeout;
    void (*on_timeout)(void *);
@@ -106,7 +107,7 @@ static int wait_selector(events_selector_t *this, void *data) {
 }
 
 static void free_selector(events_selector_t *this) {
-   free(this);
+   this->memory.free(this);
 }
 
 cad_events_t fn_selector = {
@@ -122,10 +123,11 @@ cad_events_t fn_selector = {
    .free          = (cad_events_free_fn)free_selector,
 };
 
-__PUBLIC__ cad_events_t *cad_new_events_selector(void) {
-   events_selector_t *result = (events_selector_t *)malloc(sizeof(events_selector_t));
+__PUBLIC__ cad_events_t *cad_new_events_selector(cad_memory_t memory) {
+   events_selector_t *result = (events_selector_t *)memory.malloc(sizeof(events_selector_t));
    if (result) {
       result->fn = fn_selector;
+      result->memory = memory;
       result->timeout.tv_sec = result->timeout.tv_nsec = 0;
       FD_ZERO(&(result->fd_read));
       FD_ZERO(&(result->fd_write));

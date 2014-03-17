@@ -31,6 +31,7 @@
 
 typedef struct {
    cad_event_queue_t fn;
+   cad_memory_t memory;
    provide_data_fn provider;
    void *data;
    pthread_mutex_t lock;
@@ -108,7 +109,7 @@ static void stop_pthread(event_queue_pthread_t *this) {
 
 static void free_pthread(event_queue_pthread_t *this) {
    stop_pthread(this);
-   free(this);
+   this->memory.free(this);
 }
 
 static cad_event_queue_t fn_pthread = {
@@ -120,15 +121,16 @@ static cad_event_queue_t fn_pthread = {
    .free       = (cad_event_queue_free_fn)free_pthread,
 };
 
-__PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(provide_data_fn provider) {
-   event_queue_pthread_t *result = (event_queue_pthread_t *)malloc(sizeof(event_queue_pthread_t));
+__PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(cad_memory_t memory, provide_data_fn provider) {
+   event_queue_pthread_t *result = (event_queue_pthread_t *)memory.malloc(sizeof(event_queue_pthread_t));
    if (result) {
       result->fn = fn_pthread;
+      result->memory = memory;
       result->provider = provider;
       pthread_mutex_init(&(result->lock), NULL);
       result->running = 0;
       if (pipe(result->pipe) < 0) {
-         free(result);
+         memory.free(result);
          result = NULL;
       }
    }
