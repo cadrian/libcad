@@ -47,7 +47,7 @@ static void check_hash(cad_hash_t *h, int count, ...) {
 }
 
 int main() {
-     cad_hash_t *h = cad_hash_new(stdlib_memory, cad_hash_strings);
+     cad_hash_t *h = cad_new_hash(stdlib_memory, cad_hash_strings);
      void *foo = (void*)1;
      void *bar = (void*)2;
      void *foo2 = (void*)42;
