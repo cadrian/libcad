@@ -37,7 +37,7 @@
 /**
  * The hash table public interface.
  */
-typedef struct cad_hash cad_hash_t;
+typedef struct cad_hash_s cad_hash_t;
 
 /**
  * The user must provide a function of this type to iterate through
@@ -120,31 +120,31 @@ typedef void        *(*cad_hash_set_fn)    (cad_hash_t *this, const void *key, v
  */
 typedef void        *(*cad_hash_del_fn)    (cad_hash_t *this, const void *key);
 
-struct cad_hash {
-     /**
-      * @see hash_free_fn
-      */
-     cad_hash_free_fn    free;
-     /**
-      * @see hash_count_fn
-      */
-     cad_hash_count_fn   count;
-     /**
-      * @see hash_iterate_fn
-      */
-     cad_hash_iterate_fn iterate;
-     /**
-      * @see hash_get_fn
-      */
-     cad_hash_get_fn     get;
-     /**
-      * @see hash_set_fn
-      */
-     cad_hash_set_fn     set;
-     /**
-      * @see hash_del_fn
-      */
-     cad_hash_del_fn     del;
+struct cad_hash_s {
+   /**
+    * @see hash_free_fn
+    */
+   cad_hash_free_fn    free;
+   /**
+    * @see hash_count_fn
+    */
+   cad_hash_count_fn   count;
+   /**
+    * @see hash_iterate_fn
+    */
+   cad_hash_iterate_fn iterate;
+   /**
+    * @see hash_get_fn
+    */
+   cad_hash_get_fn     get;
+   /**
+    * @see hash_set_fn
+    */
+   cad_hash_set_fn     set;
+   /**
+    * @see hash_del_fn
+    */
+   cad_hash_del_fn     del;
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -194,22 +194,22 @@ typedef void         (*cad_hash_keys_free_fn)   (const void *key);
  * will use it to manage its internal keys.
  */
 typedef struct cad_hash_keys {
-     /**
-      * @see hash_keys_hash_fn
-      */
-     cad_hash_keys_hash_fn    hash;
-     /**
-      * @see hash_keys_compare_fn
-      */
-     cad_hash_keys_compare_fn compare;
-     /**
-      * @see hash_keys_clone_fn
-      */
-     cad_hash_keys_clone_fn   clone;
-     /**
-      * @see hash_keys_free_fn
-      */
-     cad_hash_keys_free_fn    free;
+   /**
+    * @see hash_keys_hash_fn
+    */
+   cad_hash_keys_hash_fn    hash;
+   /**
+    * @see hash_keys_compare_fn
+    */
+   cad_hash_keys_compare_fn compare;
+   /**
+    * @see hash_keys_clone_fn
+    */
+   cad_hash_keys_clone_fn   clone;
+   /**
+    * @see hash_keys_free_fn
+    */
+   cad_hash_keys_free_fn    free;
 } cad_hash_keys_t;
 
 /**
