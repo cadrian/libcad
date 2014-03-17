@@ -4,10 +4,11 @@ compiler:
 before_install:
   - "sudo apt-get update -qq"
 install:
-  - "make release"
+  - "make lib"
 script:
-  - "ls -l target"
+  - "ls -lR target"
   - "make run-test"
+  - "make doc"
   - "sudo dpkg -i target/dpkg/*.deb"
 cache:
   apt: true
