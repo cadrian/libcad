@@ -7,7 +7,7 @@ MAJOR=$(shell echo $VERSION | awk -F. '{print $1}')
 PROJECT ?= $(shell awk '/^Source:/ {print $$2; exit}' debian/control)
 PROJECT_NAME ?= $(shell basename `pwd`)
 
-CFLAGS ?= -g
+CFLAGS ?= -g -v
 RUN ?=
 
 LIBRARIES ?=
