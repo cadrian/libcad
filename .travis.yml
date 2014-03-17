@@ -7,7 +7,9 @@ env:
     - "BUILD_DIR=$TRAVIS_BUILD_DIR"
     - "LD_LIBRARY_PATH=\"$BUILD_DIR/target:$LD_LIBRARY_PATH\""
 before_install:
+  - "sudo sudo add-apt-repository ppa:h-rayflood/gcc-upper"
   - "sudo apt-get update -qq"
+  - "sudo apt-get upgrade -qq gcc"
   - "sudo apt-get install -qq doxygen graphviz texlive-latex-base texlive-latex-extra"
 install:
   - "make lib"
