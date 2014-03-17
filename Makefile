@@ -136,7 +136,7 @@ target/out/%.po: src/%.c include/*.h
 	@echo "Compiling PIC library object: $<"
 	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC -fvisibility=hidden -I include/ -c $< -o $@
 
-target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
+target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so.0
 	@echo "Compiling test: $<"
 	@echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 	strings $(BUILD_DIR)/target/$(PROJECT).so
