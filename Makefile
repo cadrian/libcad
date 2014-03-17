@@ -65,7 +65,6 @@ clean:
 
 target/test/%.run: target/out/%.exe target/test
 	@echo "	 Running test: $<"
-	strings $(BUILD_DIR)/target/$(PROJECT).so
 	LD_LIBRARY_PATH=$(BUILD_DIR)/target:$(LD_LIBRARY_PATH) $< 2>&1 >$(@:.run=.log) && touch $@ || ( LD_LIBRARY_PATH=$(BUILD_DIR)/target:$(LD_LIBRARY_PATH) $(RUN) $<; exit 1 )
 
 target:
@@ -139,7 +138,9 @@ target/out/%.po: src/%.c include/*.h
 
 target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	@echo "Compiling test: $<"
-	ls -lR $(BUILD_DIR)/target/
+	@echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	strings $(BUILD_DIR)/target/$(PROJECT).so
+	@echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	$(CC) $(CPPFLAGS) $(CFLAGS) -I include/ -L $(BUILD_DIR)/target/ $(PROJECT:lib%=-l%) $< -o $@
 
 .PHONY: all lib doc clean run-test release debuild
