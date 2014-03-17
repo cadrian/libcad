@@ -51,7 +51,7 @@ lib: target target/$(PROJECT).so target/$(PROJECT).a
 doc: target target/$(PROJECT).pdf target/$(PROJECT)-htmldoc.tgz
 	@echo
 
-run-test: target/$(PROJECT).so.0 $(TST)
+run-test: target target/$(PROJECT).so.0 $(TST)
 	@echo
 
 clean:
@@ -72,7 +72,7 @@ target/test: $(shell find test/data -type f)
 	mkdir -p target/test
 	cp -a test/data/* target/out/data/; done
 
-target/$(PROJECT).so: target $(PIC_OBJ)
+target/$(PROJECT).so: $(PIC_OBJ)
 	@echo "Linking shared library: $@"
 	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ)
 	strip --strip-unneeded $@
@@ -81,7 +81,7 @@ target/$(PROJECT).so: target $(PIC_OBJ)
 target/$(PROJECT).so.0: target/$(PROJECT).so
 	(cd target && ln -sf $(PROJECT).so $(PROJECT).so.0)
 
-target/$(PROJECT).a: target $(OBJ)
+target/$(PROJECT).a: $(OBJ)
 	@echo "Linking static library: $@"
 	ar rcs $@ $(OBJ)
 	@echo
@@ -117,7 +117,7 @@ target/doc/latex/Makefile: target/doc/.doc
 target/doc/html/index.html: target/doc/.doc
 	sleep 1; touch $@
 
-target/doc/.doc: Doxyfile target/gendoc.sh target $(shell ls -1 src/*.c include/*.h doc/*)
+target/doc/.doc: Doxyfile target/gendoc.sh $(shell ls -1 src/*.c include/*.h doc/*)
 	@echo "Generating documentation"
 	target/gendoc.sh
 	doxygen -u $<
@@ -136,7 +136,8 @@ target/out/%.po: src/%.c include/*.h
 
 target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	@echo "Compiling test: $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -I include/ -L target/ $(PROJECT:lib%=-l%) $< -o $@
+	ls -lR $(shell pwd)/target/
+	$(CC) $(CPPFLAGS) $(CFLAGS) -I include/ -L $(shell pwd)/target/ $(PROJECT:lib%=-l%) $< -o $@
 
 .PHONY: all lib doc clean run-test release debuild
 #.SILENT:
