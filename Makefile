@@ -15,6 +15,8 @@ LINK_LIBS=$(LIBRARIES:lib%=-l%)
 CFLAGS += $(LINK_LIBS)
 LDFLAGS += $(LINK_LIBS)
 
+BUILD_DIR ?= $(shell pwd)
+
 
 all: run-test lib doc
 	@echo
@@ -136,8 +138,8 @@ target/out/%.po: src/%.c include/*.h
 
 target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	@echo "Compiling test: $<"
-	ls -lR $(shell pwd)/target/
-	$(CC) $(CPPFLAGS) $(CFLAGS) -I include/ -L $(shell pwd)/target/ $(PROJECT:lib%=-l%) $< -o $@
+	ls -lR $(BUILD_DIR)/target/
+	$(CC) $(CPPFLAGS) $(CFLAGS) -I include/ -L $(BUILD_DIR)/target/ $(PROJECT:lib%=-l%) $< -o $@
 
 .PHONY: all lib doc clean run-test release debuild
 #.SILENT:
