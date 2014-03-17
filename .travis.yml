@@ -6,7 +6,7 @@ before_install:
 # - "sudo apt-get install -qq doxygen dot"
 install:
   - "make lib"
-  - "ls -lR target"
+  - "dpkg -S libcad.so"
 script:
   - "make run-test"
   - "make debuild"
