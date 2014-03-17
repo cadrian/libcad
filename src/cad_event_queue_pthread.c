@@ -112,12 +112,12 @@ static void free_pthread(event_queue_pthread_t *this) {
 }
 
 static cad_event_queue_t fn_pthread = {
-   .get_fd     = (event_queue_get_fd_fn)get_fd_pthread,
-   .is_running = (event_queue_is_running_fn)is_running_pthread,
-   .pull       = (event_queue_pull_fn)pull_pthread,
-   .start      = (event_queue_start_fn)start_pthread,
-   .stop       = (event_queue_stop_fn)stop_pthread,
-   .free       = (event_queue_free_fn)free_pthread,
+   .get_fd     = (cad_event_queue_get_fd_fn)get_fd_pthread,
+   .is_running = (cad_event_queue_is_running_fn)is_running_pthread,
+   .pull       = (cad_event_queue_pull_fn)pull_pthread,
+   .start      = (cad_event_queue_start_fn)start_pthread,
+   .stop       = (cad_event_queue_stop_fn)stop_pthread,
+   .free       = (cad_event_queue_free_fn)free_pthread,
 };
 
 __PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(provide_data_fn provider) {

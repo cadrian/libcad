@@ -61,7 +61,7 @@ typedef void *(*provide_data_fn)(void *data);
  * @return the file descriptor.
  *
  */
-typedef int (*event_queue_get_fd_fn)(cad_event_queue_t *this);
+typedef int (*cad_event_queue_get_fd_fn)(cad_event_queue_t *this);
 
 /**
  * Returns non-zero if the queue is running.
@@ -71,7 +71,7 @@ typedef int (*event_queue_get_fd_fn)(cad_event_queue_t *this);
  * @return true or false.
  *
  */
-typedef int (*event_queue_is_running_fn)(cad_event_queue_t *this);
+typedef int (*cad_event_queue_is_running_fn)(cad_event_queue_t *this);
 
 /**
  * Pulls an item from the queue.
@@ -81,7 +81,7 @@ typedef int (*event_queue_is_running_fn)(cad_event_queue_t *this);
  * @return the pulled item, or NULL if impossible.
  *
  */
-typedef void *(*event_queue_pull_fn)(cad_event_queue_t *this);
+typedef void *(*cad_event_queue_pull_fn)(cad_event_queue_t *this);
 
 /**
  * Starts the queue.
@@ -90,7 +90,7 @@ typedef void *(*event_queue_pull_fn)(cad_event_queue_t *this);
  * @param[in] data the payload data that is forwarded to the data provider function
  *
  */
-typedef void (*event_queue_start_fn)(cad_event_queue_t *this, void *data);
+typedef void (*cad_event_queue_start_fn)(cad_event_queue_t *this, void *data);
 
 /**
  * Stops the queue.
@@ -98,7 +98,7 @@ typedef void (*event_queue_start_fn)(cad_event_queue_t *this, void *data);
  * @param[in] this the target event queue
  *
  */
-typedef void (*event_queue_stop_fn)(cad_event_queue_t *this);
+typedef void (*cad_event_queue_stop_fn)(cad_event_queue_t *this);
 
 /**
  * Frees the queue.
@@ -109,33 +109,33 @@ typedef void (*event_queue_stop_fn)(cad_event_queue_t *this);
  * @param[in] this the target event queue
  *
  */
-typedef void (*event_queue_free_fn)(cad_event_queue_t *this);
+typedef void (*cad_event_queue_free_fn)(cad_event_queue_t *this);
 
 struct cad_event_queue_s {
    /**
-    * @see event_queue_get_fd_fn
+    * @see cad_event_queue_get_fd_fn
     */
-   event_queue_get_fd_fn     get_fd;
+   cad_event_queue_get_fd_fn     get_fd;
    /**
-    * @see event_queue_is_running_fn
+    * @see cad_event_queue_is_running_fn
     */
-   event_queue_is_running_fn is_running;
+   cad_event_queue_is_running_fn is_running;
    /**
-    * @see event_queue_pull_fn
+    * @see cad_event_queue_pull_fn
     */
-   event_queue_pull_fn       pull;
+   cad_event_queue_pull_fn       pull;
    /**
-    * @see event_queue_start_fn
+    * @see cad_event_queue_start_fn
     */
-   event_queue_start_fn      start;
+   cad_event_queue_start_fn      start;
    /**
-    * @see event_queue_stop_fn
+    * @see cad_event_queue_stop_fn
     */
-   event_queue_stop_fn       stop;
+   cad_event_queue_stop_fn       stop;
    /**
-    * @see event_queue_free_fn
+    * @see cad_event_queue_free_fn
     */
-   event_queue_free_fn       free;
+   cad_event_queue_free_fn       free;
 };
 
 /**

@@ -110,16 +110,16 @@ static void free_selector(events_selector_t *this) {
 }
 
 cad_events_t fn_selector = {
-   .set_timeout   = (events_set_timeout_fn)set_timeout_selector,
-   .set_read      = (events_set_read_fn)set_read_selector,
-   .set_write     = (events_set_write_fn)set_write_selector,
-   .set_exception = (events_set_exception_fn)set_exception_selector,
-   .on_timeout    = (events_on_timeout_fn)on_timeout_selector,
-   .on_read       = (events_on_read_fn)on_read_selector,
-   .on_write      = (events_on_write_fn)on_write_selector,
-   .on_exception  = (events_on_exception_fn)on_exception_selector,
-   .wait          = (events_wait_fn)wait_selector,
-   .free          = (events_free_fn)free_selector,
+   .set_timeout   = (cad_events_set_timeout_fn)set_timeout_selector,
+   .set_read      = (cad_events_set_read_fn)set_read_selector,
+   .set_write     = (cad_events_set_write_fn)set_write_selector,
+   .set_exception = (cad_events_set_exception_fn)set_exception_selector,
+   .on_timeout    = (cad_events_on_timeout_fn)on_timeout_selector,
+   .on_read       = (cad_events_on_read_fn)on_read_selector,
+   .on_write      = (cad_events_on_write_fn)on_write_selector,
+   .on_exception  = (cad_events_on_exception_fn)on_exception_selector,
+   .wait          = (cad_events_wait_fn)wait_selector,
+   .free          = (cad_events_free_fn)free_selector,
 };
 
 __PUBLIC__ cad_events_t *cad_new_events_selector(void) {
