@@ -65,7 +65,8 @@ clean:
 
 target/test/%.run: target/out/%.exe target/test
 	@echo "	 Running test: $<"
-	LD_LIBRARY_PATH=target:$(LD_LIBRARY_PATH) $< 2>&1 >$(@:.run=.log) && touch $@ || ( LD_LIBRARY_PATH=target $(RUN) $<; exit 1 )
+	strings $(BUILD_DIR)/target/$(PROJECT).so
+	LD_LIBRARY_PATH=$(BUILD_DIR)/target:$(LD_LIBRARY_PATH) $< 2>&1 >$(@:.run=.log) && touch $@ || ( LD_LIBRARY_PATH=$(BUILD_DIR)/target:$(LD_LIBRARY_PATH) $(RUN) $<; exit 1 )
 
 target:
 	mkdir -p target/out/data
@@ -78,7 +79,6 @@ target/$(PROJECT).so: $(PIC_OBJ)
 	@echo "Linking shared library: $@"
 	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ)
 	strip --strip-unneeded $@
-	strings $@
 	@echo
 
 target/$(PROJECT).so.0: target/$(PROJECT).so
