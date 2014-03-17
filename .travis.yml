@@ -2,8 +2,9 @@ language: c
 compiler:
   - gcc
 env:
-  - "BUILD_DIR=$TRAVIS_BUILD_DIR"
-  - "LD_LIBRARY_PATH=\"$BUILD_DIR/target:$LD_LIBRARY_PATH\""
+  global:
+    - "BUILD_DIR=$TRAVIS_BUILD_DIR"
+    - "LD_LIBRARY_PATH=\"$BUILD_DIR/target:$LD_LIBRARY_PATH\""
 before_install:
   - "sudo apt-get update -qq"
 # - "sudo apt-get install -qq doxygen dot"
