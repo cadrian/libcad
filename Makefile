@@ -7,7 +7,7 @@ MAJOR=$(shell echo $VERSION | awk -F. '{print $1}')
 PROJECT ?= $(shell awk '/^Source:/ {print $$2; exit}' debian/control)
 PROJECT_NAME ?= $(shell basename `pwd`)
 
-CFLAGS ?= -g -v
+CFLAGS ?= -g -Wl,--verbose
 RUN ?=
 
 LIBRARIES ?=
@@ -138,9 +138,6 @@ target/out/%.po: src/%.c include/*.h
 
 target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so.0
 	@echo "Compiling test: $<"
-	@echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-	strings $(BUILD_DIR)/target/$(PROJECT).so
-	@echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 	$(CC) $(CPPFLAGS) $(CFLAGS) -I include/ -L $(BUILD_DIR)/target/ $(PROJECT:lib%=-l%) $< -o $@
 
 .PHONY: all lib doc clean run-test release debuild
