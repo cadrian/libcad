@@ -53,3 +53,13 @@ the user is free to provide her own.
 
 The library provides a general-purpose hash table. It may be used
 anywhere associative tables are needed.
+
+
+\defgroup cad_event_queue Event queues
+
+Event queues can be waited upon using event loops.
+
+
+\defgroup cad_events Asynchronous event loops
+
+Event loops are asynchronous event handlers.
