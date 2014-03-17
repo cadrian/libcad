@@ -6,9 +6,10 @@ before_install:
 # - "sudo apt-get install -qq doxygen dot"
 install:
   - "make lib"
-script:
   - "ls -lR target"
+script:
   - "make run-test"
+  - "make debuild"
   - "sudo dpkg -i target/dpkg/*.deb"
 cache:
   apt: true
