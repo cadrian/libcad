@@ -61,7 +61,7 @@ typedef void (*on_timeout_action)(void *data);
 /**
  * The user may supply an action to call on read, write, or exception.
  *
- * @param[id] fd the file descriptor to act upon
+ * @param[in] fd the file descriptor to act upon
  * @param[in] data a payload data given at wait
  *
  */
