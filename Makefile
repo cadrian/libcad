@@ -135,7 +135,7 @@ target/out/%.po: src/%.c include/*.h
 
 target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	@echo "Compiling test: $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -I $(BUILD_DIR)/include -L $(BUILD_DIR)/target $(PROJECT:lib%=-l%) $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -L $(BUILD_DIR)/target -I $(BUILD_DIR)/include -o $@ $< $(PROJECT:lib%=-l%)
 
 .PHONY: all lib doc clean run-test release debuild
 #.SILENT:
