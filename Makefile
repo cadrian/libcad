@@ -94,13 +94,13 @@ target/$(PROJECT).pdf: target/doc/latex/refman.pdf
 
 target/doc/latex/refman.pdf: target/doc/latex/Makefile target/doc/latex/version.tex
 	@echo "	 Building PDF"
-	find target/doc/latex -name \*.tex -exec sed 's!\\-\\_\\-\\-\\_\\-\\-P\\-U\\-B\\-L\\-I\\-C\\-\\_\\-\\-\\_\\- !!g' -i {} \;
-	sed -r 's!^(\\fancyfoot\[(RE|LO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize \\url{http://www.github.com/cadrian/$(PROJECT_NAME)}}}!' -i target/doc/latex/doxygen.sty
-	sed -r 's!^(\\fancyfoot\[(LE|RO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize '$(PROJECT_NAME)' '$(VERSION)'}}!' -i target/doc/latex/doxygen.sty
-#	echo '\\renewcommand{\\footrulewidth}{0.4pt}' >> target/doc/latex/doxygen.sty
-#	remove the \batchmode on the first line:
-	mv target/doc/latex/refman.tex target/doc/latex/refman.tex.orig
-	tail -n +2 target/doc/latex/refman.tex.orig > target/doc/latex/refman.tex
+#	find target/doc/latex -name \*.tex -exec sed 's!\\-\\_\\-\\-\\_\\-\\-P\\-U\\-B\\-L\\-I\\-C\\-\\_\\-\\-\\_\\- !!g' -i {} \;
+#	sed -r 's!^(\\fancyfoot\[(RE|LO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize \\url{http://www.github.com/cadrian/$(PROJECT_NAME)}}}!' -i target/doc/latex/doxygen.sty
+#	sed -r 's!^(\\fancyfoot\[(LE|RO)\]\{\\fancyplain\{\}\{).*$$!\1\\scriptsize '$(PROJECT_NAME)' '$(VERSION)'}}!' -i target/doc/latex/doxygen.sty
+##	echo '\\renewcommand{\\footrulewidth}{0.4pt}' >> target/doc/latex/doxygen.sty
+##	remove the \batchmode on the first line:
+#	mv target/doc/latex/refman.tex target/doc/latex/refman.tex.orig
+#	tail -n +2 target/doc/latex/refman.tex.orig > target/doc/latex/refman.tex
 	make -C target/doc/latex > target/doc/make.log 2>&1
 
 target/$(PROJECT)-htmldoc.tgz: target/doc/html/index.html
