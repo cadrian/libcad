@@ -98,6 +98,7 @@ target/doc/latex/refman.pdf: target/doc/latex/Makefile target/doc/latex/version.
 	mv target/doc/latex/refman.tex target/doc/latex/refman.tex.orig
 	tail -n +2 target/doc/latex/refman.tex.orig > target/doc/latex/refman.tex
 	-$(MAKE) -C target/doc/latex #> target/doc/make.log 2>&1
+	cat target/doc/latex/refman.log
 
 target/$(PROJECT)-htmldoc.tgz: target/doc/html/index.html
 	@echo "	 Building HTML archive"
