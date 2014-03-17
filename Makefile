@@ -130,15 +130,15 @@ target/gendoc.sh:
 
 target/out/%.o: src/%.c include/*.h
 	@echo "Compiling library object: $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -I include/ -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -I $(BUILD_DIR)/include -c $< -o $@
 
 target/out/%.po: src/%.c include/*.h
 	@echo "Compiling PIC library object: $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC -fvisibility=hidden -I include/ -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC -fvisibility=hidden -I $(BUILD_DIR)/include -c $< -o $@
 
-target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so.0
+target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	@echo "Compiling test: $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -I include/ -L $(BUILD_DIR)/target/ $(PROJECT:lib%=-l%) $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -I $(BUILD_DIR)/include -L $(BUILD_DIR)/target $(PROJECT:lib%=-l%) $< -o $@
 
 .PHONY: all lib doc clean run-test release debuild
 #.SILENT:
