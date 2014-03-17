@@ -76,7 +76,7 @@ target/test: $(shell find test/data -type f)
 
 target/$(PROJECT).so: $(PIC_OBJ)
 	@echo "Linking shared library: $@"
-	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ)
+	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) -lpthread
 	strip --strip-unneeded $@
 	@echo
 
