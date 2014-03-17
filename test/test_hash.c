@@ -15,6 +15,7 @@
 */
 
 #include <stdarg.h>
+#include <string.h>
 
 #include "test.h"
 #include "cad_hash.h"
@@ -24,7 +25,7 @@ struct check_data {
      int index;
 };
 
-static check_iterator(void *hash, int index, const void *key, void *value, struct check_data *expected) {
+static void check_iterator(void *hash, int index, const void *key, void *value, struct check_data *expected) {
      char *expected_key = va_arg(expected->data, char*);
      void *expected_value = va_arg(expected->data, void*);
      assert(expected->index == index);
@@ -51,7 +52,6 @@ int main() {
      void *bar = (void*)2;
      void *foo2 = (void*)42;
      void *val;
-     const char *keys[2];
 
      assert(h->count(h) == 0);
 
