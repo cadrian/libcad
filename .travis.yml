@@ -6,7 +6,7 @@ env:
   global:
     - "BUILD_DIR=$TRAVIS_BUILD_DIR"
     - "LD_LIBRARY_PATH=\"$BUILD_DIR/target:$LD_LIBRARY_PATH\""
-    - secure: "F/WuWvtgEVpxm3FAx/s6Xtdl9d97tJHCogk4gTwJgnfmW8El3ycJ/V2/LhwUmb8Z86OCsA+PnLWaxwnu/RQr8vu9ggTStNo2KmsqC5x1KJlGybDUD8/j8iY0ffIkU2aRhF2wyoPmwSfjtg4XsQtzC/Z9d8CG/4VrjlCNVJ0XoCo="
+    - secure: "G7oPNjT0yQ9MuI4v47xdznxOV5EqCpcUGxph+A+OKVTjVSslHdAg2WxwCx0OIUx17+DdMe8id3dferLKKM08sc0lpCGRhvGiku4cKoiSZDpbiFF1i8x4CijioqYw9V2BjmbZrbGHz2ljq2cfz2PG+Py1g5xQW/5KnIOmm2H8HPs="
     - secure: "X8uxJ1oCC1gS1aTLDRZAPt+MghP9CyMGcAT9a9SsbHdo69ZrAyv6n/p2xZYGpupK6uDjfnJcaV655fRX8iC93dSVbbPiuajWEnA+zMy30YZfWMalYoeMk6zA466hcn+mNSgorAo85eCrgG4P75PoO+vZafnR+qC0VdbMtVxakH0="
     - secure: "F2CqHQstk8Ef53T1WaOE4VySt7XcBALBoTiyiabIbD4UiKlx+pjhAE1gtrxeaJeTOLiUtZFeAdMRL9LBCJFnbiVDh6rsP14hbWA2zAepvr3ABE/CwCAOSQvAvrn+PRpK1bubSCkzF1fe6G9SJ4Ay32O8WhfoPrIXFzs4fw1NI/o="
     - secure: "EyysgE57zXhfPDa19s2Q6X4uABZXtXLjHrzaT0WVLc09JeasL5XzAudCbNtJHqPjm+dEgzvAEwClJ7sYB8/2swMBxF+F2ClOs+j9rNXeJvVTkIWQ6/gPxj6vYHhTQiJBXNbfzljaRN9vSZ014SzGsweAXIrpAXdBxwSlQmz2FwA="
