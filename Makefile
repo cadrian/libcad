@@ -39,6 +39,7 @@ release: debuild
 	mkdir target/dpkg
 	mv ../$(PROJECT)*_$(VERSION)_*.deb    target/dpkg/
 	mv ../$(PROJECT)_$(VERSION).dsc	      target/dpkg/
+	mv ../$(PROJECT)_$(VERSION).tar.gz    target/dpkg/
 	mv ../$(PROJECT)_$(VERSION)_*.build   target/dpkg/
 	mv ../$(PROJECT)_$(VERSION)_*.changes target/dpkg/
 	(cd target && tar cfz $(PROJECT)_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
