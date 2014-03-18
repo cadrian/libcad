@@ -42,7 +42,7 @@ release: debuild
 #	mv ../$(PROJECT)_$(VERSION).debian.*  target/dpkg/
 #	mv ../$(PROJECT)_$(VERSION).dsc	      target/dpkg/
 #	mv ../$(PROJECT)_$(VERSION)_*.build   target/dpkg/
-#	mv ../$(PROJECT)_$(VERSION)_*.changes target/dpkg/
+	mv ../$(PROJECT)_$(VERSION)_*.changes target/dpkg/
 	(cd target && tar cfz $(PROJECT)_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
 
 debuild: run-test lib doc
