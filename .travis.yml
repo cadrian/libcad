@@ -1,7 +1,7 @@
 language: c
 compiler:
   - gcc
-  - clang
+# - clang
 env:
   global:
     - "BUILD_DIR=$TRAVIS_BUILD_DIR"
@@ -93,8 +93,6 @@ script:
   - "make release"
   - "sudo dpkg -i target/dpkg/*.deb"
 after_success:
-  - "ls -Rl target/dpkg"
-  - "ls -l $HOME/.ssh/id_rsa_travis"
   - "rsync -aSH --stats -e 'ssh -i '$HOME'/.ssh/id_rsa_travis -q -C -o StrictHostKeyChecking=no' target/dpkg/*.changes target/dpkg/*.deb $RSYNC:~/incoming/"
 cache:
   apt: true
