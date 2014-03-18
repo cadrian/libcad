@@ -13,7 +13,7 @@ install:
   - "make lib"
 script:
   - "make run-test"
-  - "make debuild"
+  - "make release"
   - "sudo dpkg -i target/dpkg/*.deb"
 cache:
   apt: true
