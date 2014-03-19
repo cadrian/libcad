@@ -107,7 +107,7 @@ target/version: debian/changelog
 	awk -F'[()]' '{print $$2}' debian/changelog > $@
 
 debian/changelog: debian/changelog.raw
-	sed "s/#DATE#/$(date -R)/;s/#SNAPSHOT#/$(date -u +'~%Y%m%d%H%M%S')/" < $< > $@
+	sed "s/#DATE#/$(shell date -R)/;s/#SNAPSHOT#/$(shell date -u +'~%Y%m%d%H%M%S')/" < $< > $@
 
 target/doc/latex/Makefile: target/doc/.doc
 	sleep 1; touch $@
