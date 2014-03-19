@@ -84,7 +84,8 @@ env:
     - secure: "ShfFpzliFpCq9tDgWJvUTqX3hCw63z5RRDfy0RQpP/Wo4BlfndwdnUiIngByqaFe1Or6yM5qfLNdeXmA2MJ1YTk1w4l1ZneTH0+2Qg2mRtUOEjgGrZ50Yp4Nzs3TOYEits1hqdNsVqJz6584jGKKFPheBYD8c0w6zpZ7Vyt5XJ0="
 before_install:
   - "sudo apt-get update -qq"
-  - "sudo apt-get install -qq rsync graphviz doxygen doxygen-latex texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra fonts-linuxlibertine fonts-inconsolata devscripts"
+  - "sudo apt-get install -qq rsync graphviz doxygen doxygen-latex texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra fonts-linuxlibertine fonts-inconsolata devscripts ntp"
+  - "sudo service ntp restart"
   - ".travis.conf/splice_key.sh"
 install:
   - "make lib"
