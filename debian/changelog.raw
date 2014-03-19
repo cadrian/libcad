@@ -1,3 +1,9 @@
+libcad (0.0.2#SNAPSHOT#) unstable; urgency=low
+
+  * Travis CI
+
+ -- Cyril ADRIAN <cyril.adrian@gmail.com>  #DATE#
+
 libcad (0.0.1) unstable; urgency=low
 
   * Initial release -- split from YacJP

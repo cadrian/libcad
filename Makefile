@@ -2,8 +2,6 @@ OBJ=$(shell ls -1 src/*.c | sed -r 's|^src/|target/out/|g;s|\.c|.o|g')
 PIC_OBJ=$(shell ls -1 src/*.c | sed -r 's|^src/|target/out/|g;s|\.c|.po|g')
 TST=$(shell ls -1 test/test*.c | sed -r 's|^test/|target/test/|g;s|\.c|.run|g')
 
-VERSION=$(shell head -n 1 debian/changelog | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
-MAJOR=$(shell echo $VERSION | awk -F. '{print $1}')
 PROJECT ?= $(shell awk '/^Source:/ {print $$2; exit}' debian/control)
 PROJECT_NAME ?= $(shell basename `pwd`)
 
@@ -20,28 +18,28 @@ BUILD_DIR ?= $(shell pwd)
 all: run-test lib doc
 	@echo
 
-install: run-test lib doc
+install: run-test lib doc target/version
 	mkdir -p $(DESTDIR)/usr/lib
 	mkdir -p $(DESTDIR)/usr/include
 	mkdir -p $(DESTDIR)/usr/share/$(PROJECT)
 	mkdir -p $(DESTDIR)/usr/share/doc/$(PROJECT)
-	cp target/$(PROJECT).so $(DESTDIR)/usr/lib/$(PROJECT).so.$(VERSION)
-	ln -sf $(PROJECT).so.$(VERSION) $(DESTDIR)/usr/lib/$(PROJECT).so.0
-	ln -sf $(PROJECT).so.$(VERSION) $(DESTDIR)/usr/lib/$(PROJECT).so
+	cp target/$(PROJECT).so $(DESTDIR)/usr/lib/$(PROJECT).so.$(shell cat /target/version)
+	ln -sf $(PROJECT).so.$(shell cat target/version) $(DESTDIR)/usr/lib/$(PROJECT).so.0
+	ln -sf $(PROJECT).so.$(shell cat target/version) $(DESTDIR)/usr/lib/$(PROJECT).so
 	cp target/$(PROJECT).a $(DESTDIR)/usr/lib/$(PROJECT).a
 	cp include/*.h $(DESTDIR)/usr/include/
 	cp -a target/*.pdf target/doc/html $(DESTDIR)/usr/share/doc/$(PROJECT)/
 	-test -e gendoc.sh && cp Makefile release.sh gendoc.sh $(DESTDIR)/usr/share/$(PROJECT) # libcad specific
 
-release: debuild
-	@echo "Releasing version $(VERSION)"
+release: debuild target/version
+	@echo "Releasing version $(shell cat target/version)"
 	mkdir target/dpkg
-	mv ../$(PROJECT)*_$(VERSION)_*.deb    target/dpkg/
-	mv ../$(PROJECT)_$(VERSION).dsc	      target/dpkg/
-	mv ../$(PROJECT)_$(VERSION).tar.gz    target/dpkg/
-	mv ../$(PROJECT)_$(VERSION)_*.build   target/dpkg/
-	mv ../$(PROJECT)_$(VERSION)_*.changes target/dpkg/
-	(cd target && tar cfz $(PROJECT)_$(VERSION)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
+	mv ../$(PROJECT)*_$(shell cat target/version)_*.deb    target/dpkg/
+	mv ../$(PROJECT)_$(shell cat target/version).dsc	      target/dpkg/
+	mv ../$(PROJECT)_$(shell cat target/version).tar.gz    target/dpkg/
+	mv ../$(PROJECT)_$(shell cat target/version)_*.build   target/dpkg/
+	mv ../$(PROJECT)_$(shell cat target/version)_*.changes target/dpkg/
+	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
 
 debuild: run-test lib doc
 	debuild -us -uc
@@ -106,7 +104,10 @@ target/doc/latex/version.tex: target/version
 	cp $< $@
 
 target/version: debian/changelog
-	echo $(VERSION) > $@
+	awk -F'[()]' '{print $$2}' debian/changelog > $@
+
+debian/changelog: debian/changelog.raw
+	sed "s/#DATE#/$(date -R)/;s/#SNAPSHOT#/$(date -u +'~%Y%m%d%H%M%S')/" < $< > $@
 
 target/doc/latex/Makefile: target/doc/.doc
 	sleep 1; touch $@
