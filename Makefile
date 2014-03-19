@@ -24,8 +24,8 @@ install: run-test lib doc target/version
 	mkdir -p $(DESTDIR)/usr/share/$(PROJECT)
 	mkdir -p $(DESTDIR)/usr/share/doc/$(PROJECT)
 	cp target/$(PROJECT).so $(DESTDIR)/usr/lib/$(PROJECT).so.$(shell cat /target/version)
-	ln -sf $(PROJECT).so.$(shell cat target/version) $(DESTDIR)/usr/lib/$(PROJECT).so.0
 	ln -sf $(PROJECT).so.$(shell cat target/version) $(DESTDIR)/usr/lib/$(PROJECT).so
+	ln -sf $(PROJECT).so $(DESTDIR)/usr/lib/$(PROJECT).so.0
 	cp target/$(PROJECT).a $(DESTDIR)/usr/lib/$(PROJECT).a
 	cp include/*.h $(DESTDIR)/usr/include/
 	cp -a target/*.pdf target/doc/html $(DESTDIR)/usr/share/doc/$(PROJECT)/
