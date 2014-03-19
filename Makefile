@@ -104,7 +104,7 @@ target/doc/latex/version.tex: target/version
 	cp $< $@
 
 target/version: debian/changelog
-	awk -F'[()]' '{print $$2}' debian/changelog > $@
+	head -n 1 debian/changelog | awk -F'[()]' '{print $$2}' > $@
 
 debian/changelog: debian/changelog.raw
 	sed "s/#DATE#/$(shell date -R)/;s/#SNAPSHOT#/$(shell date -u +'~%Y%m%d%H%M%S')/" < $< > $@
