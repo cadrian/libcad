@@ -8,12 +8,11 @@ PROJECT ?= $(shell awk '/^Source:/ {print $$2; exit}' debian/control)
 PROJECT_NAME ?= $(shell basename `pwd`)
 
 CFLAGS ?= -g
+LDFLAGS ?=
 RUN ?=
 
-LIBRARIES ?=
+LIBRARIES ?= libpthread
 LINK_LIBS=$(LIBRARIES:lib%=-l%)
-CFLAGS += $(LINK_LIBS)
-LDFLAGS += $(LINK_LIBS)
 
 BUILD_DIR ?= $(shell pwd)
 
@@ -75,7 +74,7 @@ target/test: $(shell find test/data -type f)
 
 target/$(PROJECT).so: $(PIC_OBJ)
 	@echo "Linking shared library: $@"
-	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) -lpthread
+	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) $(LINK_LIBS)
 	strip --strip-unneeded $@
 	@echo
 
