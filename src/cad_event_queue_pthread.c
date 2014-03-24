@@ -42,7 +42,7 @@ typedef struct {
    cad_memory_t memory;
    provide_data_fn provider;
    void *data;
-   pthread_rwlock_t lock;
+   pthread_mutex_t lock;
    pthread_t thread;
    int pipe[2];
    int state;
@@ -69,8 +69,9 @@ static int is_running_pthread(event_queue_pthread_t *this) {
 static void *pthread_main(event_queue_pthread_t *this) {
    void *data;
    struct pollfd w;
+   int run;
 
-   while (ACCESS_ONCE(this->state) == STATE_INIT) { /* wait for init */
+   while (ACCESS_ONCE(this->state) == STATE_INIT) {
       poll(NULL, 0, 1);
    }
 
@@ -80,16 +81,22 @@ static void *pthread_main(event_queue_pthread_t *this) {
       w.revents = 0;
       poll(&w, 1, 10);
       if (w.revents & POLLOUT) {
-         if (0 == pthread_rwlock_rdlock(&(this->lock))) {
-            data = this->provider(this->data);
-            if (data) {
-               if (write(this->pipe[1], (void *)&data, sizeof(void *)) < (int)sizeof(void *)) {
-                  this->fn.stop(&(this->fn)); /* TODO error handling */
+         run = 0;
+         if (0 == pthread_mutex_lock(&(this->lock))) {
+            if (this->state == STATE_RUN) {
+               run = 1;
+               data = this->provider(this->data);
+               if (data) {
+                  if (write(this->pipe[1], (void *)&data, sizeof(void *)) < (int)sizeof(void *)) {
+                     this->fn.stop(&(this->fn)); /* TODO error handling */
+                  }
                }
             }
-            pthread_rwlock_unlock(&(this->lock));
+            pthread_mutex_unlock(&(this->lock));
+            if (run) {
+               poll(NULL, 0, 10); /* 10 ms not to clog the CPU */
+            }
          }
-         poll(NULL, 0, 10); /* 10 ms not to clog the CPU */
       }
    }
 
@@ -98,22 +105,22 @@ static void *pthread_main(event_queue_pthread_t *this) {
 
 static void start_pthread(event_queue_pthread_t *this, void *data) {
    if (ACCESS_ONCE(this->state) == STATE_INIT) {
-      if (0 == pthread_rwlock_wrlock(&(this->lock))) {
+      if (0 == pthread_mutex_lock(&(this->lock))) {
          this->data = data;
          if (pthread_create(&(this->thread), NULL, (void *(*)(void *))pthread_main, this) == 0) {
             this->state = STATE_RUN;
          }
       }
-      pthread_rwlock_unlock(&(this->lock));
+      pthread_mutex_unlock(&(this->lock));
    }
 }
 
 static void stop_pthread(event_queue_pthread_t *this) {
    int state = ACCESS_ONCE(this->state);
-   if (0 == pthread_rwlock_wrlock(&(this->lock))) {
+   if (0 == pthread_mutex_lock(&(this->lock))) {
       this->state = STATE_STOP;
       this->data = NULL;
-      pthread_rwlock_unlock(&(this->lock));
+      pthread_mutex_unlock(&(this->lock));
    }
    if (state == STATE_RUN) {
       pthread_join(this->thread, NULL);
@@ -122,7 +129,7 @@ static void stop_pthread(event_queue_pthread_t *this) {
 
 static void free_pthread(event_queue_pthread_t *this) {
    stop_pthread(this);
-   pthread_rwlock_destroy(&(this->lock));
+   pthread_mutex_destroy(&(this->lock));
    this->memory.free(this);
 }
 
@@ -141,7 +148,7 @@ __PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(cad_memory_t memory, p
       result->fn = fn_pthread;
       result->memory = memory;
       result->provider = provider;
-      pthread_rwlock_init(&(result->lock), NULL);
+      pthread_mutex_init(&(result->lock), NULL);
       result->state = STATE_INIT;
       if (pipe(result->pipe) < 0) {
          perror("cad_new_event_queue_pthread:pipe(2)");
