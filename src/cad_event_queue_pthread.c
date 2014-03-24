@@ -22,8 +22,10 @@
  * queues.
  */
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <poll.h>
 #include <pthread.h>
 #include <unistd.h>
 
@@ -57,7 +59,7 @@ static void *pull_pthread(event_queue_pthread_t *this) {
 static int is_running_pthread(event_queue_pthread_t *this) {
    int result = 0;
    if (0 == pthread_mutex_lock(&(this->lock))) {
-      result = this->running;
+      result = ACCESS_ONCE(this->running);
       pthread_mutex_unlock(&(this->lock));
    }
    return result;
@@ -65,18 +67,26 @@ static int is_running_pthread(event_queue_pthread_t *this) {
 
 static void *pthread_main(event_queue_pthread_t *this) {
    void *data;
+   struct pollfd w;
 
    while (!is_running_pthread(this)) { /* wait for init */
+      poll(NULL, 0, 1);
    }
 
    while (is_running_pthread(this)) {
-      data = this->provider(this->data);
-      if (data) {
-         if (write(this->pipe[1], (void *)&data, sizeof(void *)) < (int)sizeof(void *)) {
-            this->fn.stop(&(this->fn)); /* WHAT CAN I DO ?? */
+      w.fd = this->pipe[1];
+      w.events = POLLOUT;
+      w.revents = 0;
+      poll(&w, 1, 10);
+      if (w.revents & POLLOUT) {
+         data = this->provider(this->data);
+         if (data) {
+            if (write(this->pipe[1], (void *)&data, sizeof(void *)) < (int)sizeof(void *)) {
+               this->fn.stop(&(this->fn)); /* TODO error handling */
+            }
          }
+         poll(NULL, 0, 10); /* 10 ms not to clog the CPU */
       }
-      usleep(50000UL); /* 50 ms not to clog the CPU */
    }
 
    return NULL;
@@ -84,7 +94,7 @@ static void *pthread_main(event_queue_pthread_t *this) {
 
 static void start_pthread(event_queue_pthread_t *this, void *data) {
    if (0 == pthread_mutex_lock(&(this->lock))) {
-      if (!this->running) {
+      if (!ACCESS_ONCE(this->running)) {
          this->data = data;
          if (!pthread_create(&(this->thread), NULL, (void *(*)(void *))pthread_main, this)) {
             this->running = 1;
@@ -97,7 +107,7 @@ static void start_pthread(event_queue_pthread_t *this, void *data) {
 static void stop_pthread(event_queue_pthread_t *this) {
    int running = 0;
    if (0 == pthread_mutex_lock(&(this->lock))) {
-      running = this->running;
+      running = ACCESS_ONCE(this->running);
       this->running = 0;
       this->data = NULL;
       pthread_mutex_unlock(&(this->lock));
@@ -121,7 +131,7 @@ static cad_event_queue_t fn_pthread = {
    .free       = (cad_event_queue_free_fn)free_pthread,
 };
 
-__PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(cad_memory_t memory, provide_data_fn provider) {
+__PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(cad_memory_t memory, provide_data_fn provider, size_t capacity) {
    event_queue_pthread_t *result = (event_queue_pthread_t *)memory.malloc(sizeof(event_queue_pthread_t));
    if (result) {
       result->fn = fn_pthread;
@@ -130,6 +140,12 @@ __PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(cad_memory_t memory, p
       pthread_mutex_init(&(result->lock), NULL);
       result->running = 0;
       if (pipe(result->pipe) < 0) {
+         perror("cad_new_event_queue_pthread:pipe(2)");
+         memory.free(result);
+         result = NULL;
+      }
+      if (fcntl(result->pipe, F_SETPIPE_SZ, (int)(capacity * sizeof(void*))) < 0) {
+         perror("cad_new_event_queue_pthread:fcntl(2)");
          memory.free(result);
          result = NULL;
       }

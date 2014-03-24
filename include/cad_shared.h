@@ -74,6 +74,11 @@ typedef struct cad_memory {
 __PUBLIC__ extern cad_memory_t stdlib_memory;
 
 /**
+ * For unlocked shared data access. Shamelessly copied from linux/compiler.h
+ */
+#define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
+
+/**
  * @}
  */
 

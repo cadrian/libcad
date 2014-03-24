@@ -144,7 +144,7 @@ struct cad_event_queue_s {
  * @return the newly allocated event queue.
  *
  */
-__PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(cad_memory_t memory, provide_data_fn provider);
+__PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(cad_memory_t memory, provide_data_fn provider, size_t capacity);
 
 /**
  * @}
