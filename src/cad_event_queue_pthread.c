@@ -22,6 +22,8 @@
  * queues.
  */
 
+#define _GNU_SOURCE
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,15 +33,19 @@
 
 #include "cad_event_queue.h"
 
+#define STATE_INIT 0
+#define STATE_RUN  1
+#define STATE_STOP 2
+
 typedef struct {
    cad_event_queue_t fn;
    cad_memory_t memory;
    provide_data_fn provider;
    void *data;
-   pthread_mutex_t lock;
+   pthread_rwlock_t lock;
    pthread_t thread;
    int pipe[2];
-   int running;
+   int state;
 } event_queue_pthread_t;
 
 static int get_fd_pthread(event_queue_pthread_t *this) {
@@ -57,33 +63,31 @@ static void *pull_pthread(event_queue_pthread_t *this) {
 }
 
 static int is_running_pthread(event_queue_pthread_t *this) {
-   int result = 0;
-   if (0 == pthread_mutex_lock(&(this->lock))) {
-      result = ACCESS_ONCE(this->running);
-      pthread_mutex_unlock(&(this->lock));
-   }
-   return result;
+   return ACCESS_ONCE(this->state) == STATE_RUN;
 }
 
 static void *pthread_main(event_queue_pthread_t *this) {
    void *data;
    struct pollfd w;
 
-   while (!is_running_pthread(this)) { /* wait for init */
+   while (ACCESS_ONCE(this->state) == STATE_INIT) { /* wait for init */
       poll(NULL, 0, 1);
    }
 
-   while (is_running_pthread(this)) {
-      w.fd = this->pipe[1];
-      w.events = POLLOUT;
+   w.fd = this->pipe[1];
+   w.events = POLLOUT;
+   while (ACCESS_ONCE(this->state) == STATE_RUN) {
       w.revents = 0;
       poll(&w, 1, 10);
       if (w.revents & POLLOUT) {
-         data = this->provider(this->data);
-         if (data) {
-            if (write(this->pipe[1], (void *)&data, sizeof(void *)) < (int)sizeof(void *)) {
-               this->fn.stop(&(this->fn)); /* TODO error handling */
+         if (0 == pthread_rwlock_rdlock(&(this->lock))) {
+            data = this->provider(this->data);
+            if (data) {
+               if (write(this->pipe[1], (void *)&data, sizeof(void *)) < (int)sizeof(void *)) {
+                  this->fn.stop(&(this->fn)); /* TODO error handling */
+               }
             }
+            pthread_rwlock_unlock(&(this->lock));
          }
          poll(NULL, 0, 10); /* 10 ms not to clog the CPU */
       }
@@ -93,32 +97,32 @@ static void *pthread_main(event_queue_pthread_t *this) {
 }
 
 static void start_pthread(event_queue_pthread_t *this, void *data) {
-   if (0 == pthread_mutex_lock(&(this->lock))) {
-      if (!ACCESS_ONCE(this->running)) {
+   if (ACCESS_ONCE(this->state) == STATE_INIT) {
+      if (0 == pthread_rwlock_wrlock(&(this->lock))) {
          this->data = data;
-         if (!pthread_create(&(this->thread), NULL, (void *(*)(void *))pthread_main, this)) {
-            this->running = 1;
+         if (pthread_create(&(this->thread), NULL, (void *(*)(void *))pthread_main, this) == 0) {
+            this->state = STATE_RUN;
          }
       }
-      pthread_mutex_unlock(&(this->lock));
+      pthread_rwlock_unlock(&(this->lock));
    }
 }
 
 static void stop_pthread(event_queue_pthread_t *this) {
-   int running = 0;
-   if (0 == pthread_mutex_lock(&(this->lock))) {
-      running = ACCESS_ONCE(this->running);
-      this->running = 0;
+   int state = ACCESS_ONCE(this->state);
+   if (0 == pthread_rwlock_wrlock(&(this->lock))) {
+      this->state = STATE_STOP;
       this->data = NULL;
-      pthread_mutex_unlock(&(this->lock));
+      pthread_rwlock_unlock(&(this->lock));
    }
-   if (running) {
+   if (state == STATE_RUN) {
       pthread_join(this->thread, NULL);
    }
 }
 
 static void free_pthread(event_queue_pthread_t *this) {
    stop_pthread(this);
+   pthread_rwlock_destroy(&(this->lock));
    this->memory.free(this);
 }
 
@@ -137,18 +141,20 @@ __PUBLIC__ cad_event_queue_t *cad_new_event_queue_pthread(cad_memory_t memory, p
       result->fn = fn_pthread;
       result->memory = memory;
       result->provider = provider;
-      pthread_mutex_init(&(result->lock), NULL);
-      result->running = 0;
+      pthread_rwlock_init(&(result->lock), NULL);
+      result->state = STATE_INIT;
       if (pipe(result->pipe) < 0) {
          perror("cad_new_event_queue_pthread:pipe(2)");
          memory.free(result);
          result = NULL;
       }
-      if (fcntl(result->pipe, F_SETPIPE_SZ, (int)(capacity * sizeof(void*))) < 0) {
+#ifdef F_SETPIPE_SZ
+      if (fcntl(result->pipe[1], F_SETPIPE_SZ, (int)(capacity * sizeof(void*))) < 0) {
          perror("cad_new_event_queue_pthread:fcntl(2)");
          memory.free(result);
          result = NULL;
       }
+#endif
    }
    return (cad_event_queue_t *)result;
 }
