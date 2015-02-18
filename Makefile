@@ -79,7 +79,7 @@ target/test: $(shell find test/data -type f)
 ifeq "$(wildcard /etc/setup/setup.rc)" ""
 target/$(SOBJ): $(PIC_OBJ)
 	@echo "Linking shared library: $@"
-	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) $(LINK_LIBS) \
+	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) $(LINK_LIBS)
 	strip --strip-unneeded $@
 	@echo
 else
@@ -91,7 +91,7 @@ target/$(SOBJ): $(PIC_OBJ)
 		-Wl,--enable-auto-import \
 		-Wl,--whole-archive $(PIC_OBJ) \
 		-Wl,--no-whole-archive $(LDFLAGS) $(LINK_LIBS)
-#	strip --strip-unneeded $@
+	strip --strip-unneeded $@
 	@echo
 endif
 
