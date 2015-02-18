@@ -15,7 +15,7 @@ LINK_LIBS=$(LIBRARIES:lib%=-l%)
 BUILD_DIR ?= $(shell pwd)
 
 AOBJ=$(PROJECT).a
-ifneq "$(wildcard /cygdrive)" ""
+ifeq "$(wildcard /etc/setup/setup.rc)" ""
 SOBJ=$(PROJECT).so
 else
 SOBJ=cyg$(shell echo $(PROJECT) | sed 's/^lib//').dll
@@ -76,7 +76,7 @@ target/test: $(shell find test/data -type f)
 	mkdir -p target/test
 	cp -a test/data/* target/out/data/; done
 
-ifneq "$(wildcard /cygdrive)" ""
+ifeq "$(wildcard /etc/setup/setup.rc)" ""
 target/$(SOBJ): $(PIC_OBJ)
 	@echo "Linking shared library: $@"
 	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) $(LINK_LIBS) \
