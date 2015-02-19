@@ -14,6 +14,12 @@ LINK_LIBS=$(LIBRARIES:lib%=-l%)
 
 BUILD_DIR ?= $(shell pwd)
 
+AOBJ=$(PROJECT).a
+ifeq "$(wildcard /etc/setup/setup.rc)" ""
+SOBJ=$(PROJECT).so
+else
+SOBJ=cyg$(shell echo $(PROJECT) | sed 's/^lib//').dll
+endif
 
 all: run-test lib doc
 	@echo
@@ -23,10 +29,10 @@ install: run-test lib doc target/version
 	mkdir -p $(DESTDIR)/usr/include
 	mkdir -p $(DESTDIR)/usr/share/$(PROJECT)
 	mkdir -p $(DESTDIR)/usr/share/doc/$(PROJECT)
-	cp target/$(PROJECT).so $(DESTDIR)/usr/lib/$(PROJECT).so.$(shell cat target/version)
-	ln -sf $(PROJECT).so.$(shell cat target/version) $(DESTDIR)/usr/lib/$(PROJECT).so.0
-	ln -sf $(PROJECT).so.$(shell cat target/version) $(DESTDIR)/usr/lib/$(PROJECT).so
-	cp target/$(PROJECT).a $(DESTDIR)/usr/lib/$(PROJECT).a
+	cp target/$(SOBJ) $(DESTDIR)/usr/lib/$(SOBJ).$(shell cat target/version)
+	ln -sf $(SOBJ).$(shell cat target/version) $(DESTDIR)/usr/lib/$(SOBJ).0
+	ln -sf $(SOBJ).$(shell cat target/version) $(DESTDIR)/usr/lib/$(SOBJ)
+	cp target/$(AOBJ) $(DESTDIR)/usr/lib/$(AOBJ)
 	cp include/*.h $(DESTDIR)/usr/include/
 	cp -a target/*.pdf target/doc/html $(DESTDIR)/usr/share/doc/$(PROJECT)/
 	-test -e gendoc.sh && cp Makefile release.sh gendoc.sh $(DESTDIR)/usr/share/$(PROJECT) # libcad specific
@@ -39,17 +45,17 @@ release: debuild target/version
 	mv ../$(PROJECT)_$(shell cat target/version).tar.[gx]z target/dpkg/
 	mv ../$(PROJECT)_$(shell cat target/version)_*.build   target/dpkg/
 	mv ../$(PROJECT)_$(shell cat target/version)_*.changes target/dpkg/
-	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
+	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(SOBJ) $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
 
 debuild: run-test lib doc
 	debuild -us -uc
 
-lib: target target/$(PROJECT).so target/$(PROJECT).a
+lib: target target/$(SOBJ) target/$(AOBJ)
 
 doc: target target/$(PROJECT).pdf target/$(PROJECT)-htmldoc.tgz
 	@echo
 
-run-test: target target/$(PROJECT).so.0 $(TST)
+run-test: target target/$(SOBJ).0 $(TST)
 	@echo
 
 clean:
@@ -70,19 +76,32 @@ target/test: $(shell find test/data -type f)
 	mkdir -p target/test
 	cp -a test/data/* target/out/data/; done
 
-target/$(PROJECT).so: $(PIC_OBJ)
+ifeq "$(wildcard /etc/setup/setup.rc)" ""
+target/$(SOBJ): $(PIC_OBJ)
 	@echo "Linking shared library: $@"
 	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) $(LINK_LIBS)
 	strip --strip-unneeded $@
 	@echo
+else
+target/$(SOBJ): $(PIC_OBJ)
+	@echo "Linking shared library: $@"
+	$(CC) -shared -o $@ \
+		-Wl,--out-implib=target/$(PROJECT).dll.a \
+		-Wl,--export-all-symbols \
+		-Wl,--enable-auto-import \
+		-Wl,--whole-archive $(PIC_OBJ) \
+		-Wl,--no-whole-archive $(LDFLAGS) $(LINK_LIBS)
+	strip --strip-unneeded $@
+	@echo
+endif
 
-target/$(PROJECT).so.0: target/$(PROJECT).so
-	(cd target && ln -sf $(PROJECT).so $(PROJECT).so.0)
-
-target/$(PROJECT).a: $(OBJ)
+target/$(AOBJ): $(OBJ)
 	@echo "Linking static library: $@"
 	ar rcs $@ $(OBJ)
 	@echo
+
+target/$(SOBJ).0: target/$(SOBJ)
+	(cd target && ln -sf $(PROJECT).so $(PROJECT).so.0)
 
 target/$(PROJECT).pdf: target/doc/latex/refman.pdf
 	@echo "	   Saving PDF"
@@ -134,7 +153,7 @@ target/out/%.po: src/%.c include/*.h
 
 target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	@echo "Compiling test: $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -L $(BUILD_DIR)/target -I $(BUILD_DIR)/include -o $@ $< $(PROJECT:lib%=-l%)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -L $(BUILD_DIR)/target -I $(BUILD_DIR)/include -o $@ $< $(LINK_LIBS) $(PROJECT:lib%=-l%)
 
 .PHONY: all lib doc clean run-test release debuild
 #.SILENT:
