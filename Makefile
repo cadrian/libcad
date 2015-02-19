@@ -35,8 +35,8 @@ release: debuild target/version
 	@echo "Releasing version $(shell cat target/version)"
 	mkdir target/dpkg
 	mv ../$(PROJECT)*_$(shell cat target/version)_*.deb    target/dpkg/
-	mv ../$(PROJECT)_$(shell cat target/version).dsc	      target/dpkg/
-	mv ../$(PROJECT)_$(shell cat target/version).tar.gz    target/dpkg/
+	mv ../$(PROJECT)_$(shell cat target/version).dsc       target/dpkg/
+	mv ../$(PROJECT)_$(shell cat target/version).tar.[gx]z target/dpkg/
 	mv ../$(PROJECT)_$(shell cat target/version)_*.build   target/dpkg/
 	mv ../$(PROJECT)_$(shell cat target/version)_*.changes target/dpkg/
 	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).so $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
