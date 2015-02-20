@@ -82,6 +82,7 @@ env:
     - secure: "AxBFPXio+Fmc2jei93PVa+m90Os59DG6hsmRd8UQ3L61d/nvp/qZ46YgbuyzjFPNgQIvMrfE0UtJ1FD+weP2u7MHpmJr+xvVim48SSI8usLn2+BTrIrtwzAYUxBaRSfoNsMBgNfd2berr5L8dcULcooDxxjTtBNCA6akzcd21iY="
     - secure: "PA3tvI/8+bSXRh5tXs1eqRCAa/15OOPe892vUrjpbzjG3QBWScDCXyfSTzPu2xMXqX98tr+n2gD/sb5PX/K2XBEi0uP5pyhanRhRuEHbCX/wh+gOvQaa2D55oOCpdgSw5BucZfYwSMnDUlmXQOon+0Cx6kzrnlqCdoVRNjGc6zQ="
     - secure: "ShfFpzliFpCq9tDgWJvUTqX3hCw63z5RRDfy0RQpP/Wo4BlfndwdnUiIngByqaFe1Or6yM5qfLNdeXmA2MJ1YTk1w4l1ZneTH0+2Qg2mRtUOEjgGrZ50Yp4Nzs3TOYEits1hqdNsVqJz6584jGKKFPheBYD8c0w6zpZ7Vyt5XJ0="
+    - secure: "Vz/z8szc7hyE+y/Ude/qNqp4bfa3JuGqdUD6F6Z0z8Zf9nCP7SdoeLxp4pEbVBEKxow2IehpxT4N5LQOCbTFgiyWVSmdD8NdnIpV91TSzl+oIpyw98tvzR9pd2VMRFiNlhE2vlqtmhy/haOM7Eb49VUNyhNBQ5h7tZpBDsO5gPA="
 before_install:
   - "sudo apt-get update -qq"
   - "sudo apt-get install -qq rsync graphviz doxygen doxygen-latex texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra fonts-linuxlibertine fonts-inconsolata devscripts ntp"
@@ -94,7 +95,7 @@ script:
   - "make release"
   - "sudo dpkg -i target/dpkg/*.deb"
 after_success:
-  - "rsync -aSH --stats -e 'ssh -i '$HOME'/.ssh/id_rsa_travis -q -C -o StrictHostKeyChecking=no' target/dpkg/*.deb target/dpkg/*.dsc target/dpkg/*.tar.gz $RSYNC:apt/incoming/"
-  - "rsync -aSH --stats -e 'ssh -i '$HOME'/.ssh/id_rsa_travis -q -C -o StrictHostKeyChecking=no' target/dpkg/*.changes $RSYNC:apt/incoming/"
+  - "rsync -aSH --stats -e 'ssh -i '$HOME'/.ssh/id_rsa_travis -p '$PORT' -q -C -o StrictHostKeyChecking=no' target/dpkg/*.deb target/dpkg/*.dsc target/dpkg/*.tar.gz $RSYNC:apt/incoming/"
+  - "rsync -aSH --stats -e 'ssh -i '$HOME'/.ssh/id_rsa_travis -p '$PORT' -q -C -o StrictHostKeyChecking=no' target/dpkg/*.changes $RSYNC:apt/incoming/"
 cache:
   apt: true
