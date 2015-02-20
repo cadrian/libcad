@@ -9,8 +9,9 @@ maintain (see e.g. https://github.com/cadrian/yacjp)
 
 ## Why yet another library
 
-This library started with YacJP. Some parts are reusable though, so I split them in a
-separate library.
+This library started with
+[YacJP](https://github.com/cadrian/yacjp). Some parts are reusable
+though, so I split them in a separate library.
 
 Other parts I designed from scratch, based on ideas in other projects I work with.
 
