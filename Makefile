@@ -21,7 +21,11 @@ else
 SOBJ=cyg$(shell echo $(PROJECT) | sed 's/^lib//').dll
 endif
 
+ifeq "$(wildcard /usr/bin/doxygen)" ""
+all: run-test lib
+else
 all: run-test lib doc
+endif
 	@echo
 
 install: target/version
@@ -52,20 +56,7 @@ target/dpkg/release.main: run-test lib target/version
 	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(SOBJ) dpkg)
 	touch target/dpkg/release.main
 
-release.doc: target/dpkg/release.doc
-
-target/dpkg/release.doc: doc
-	@echo "Releasing doc version $(shell cat target/version)"
-	debuild -us -uc -nc -F
-	mkdir -p target/dpkg
-	mv ../$(PROJECT)*_$(shell cat target/version)_*.deb    target/dpkg/
-	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
-	touch target/dpkg/release.doc
-
 lib: target/$(SOBJ) target/$(AOBJ)
-
-doc: target/$(PROJECT).pdf target/$(PROJECT)-htmldoc.tgz
-	@echo
 
 run-test: target/$(SOBJ).0 $(TST)
 	@echo
@@ -110,6 +101,20 @@ target/$(AOBJ): $(OBJ)
 target/$(SOBJ).0: target/$(SOBJ)
 	(cd target && ln -sf $(PROJECT).so $(PROJECT).so.0)
 
+ifneq "$(wildcard /usr/bin/doxygen)" ""
+release.doc: target/dpkg/release.doc
+
+target/dpkg/release.doc: doc
+	@echo "Releasing doc version $(shell cat target/version)"
+	debuild -us -uc -nc -F
+	mkdir -p target/dpkg
+	mv ../$(PROJECT)*_$(shell cat target/version)_*.deb    target/dpkg/
+	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
+	touch target/dpkg/release.doc
+
+doc: target/$(PROJECT).pdf target/$(PROJECT)-htmldoc.tgz
+	@echo
+
 target/$(PROJECT).pdf: target/doc/latex/refman.pdf
 	@echo "	   Saving PDF"
 	cp $< $@
@@ -125,6 +130,7 @@ target/$(PROJECT)-htmldoc.tgz: target/doc/html/index.html
 
 target/doc/latex/version.tex: target/version
 	cp $< $@
+endif
 
 target/version: debian/changelog
 	mkdir -p target
@@ -132,6 +138,9 @@ target/version: debian/changelog
 
 debian/changelog: debian/changelog.raw
 	sed "s/#DATE#/$(shell date -R)/;s/#SNAPSHOT#/$(shell date -u +'~%Y%m%d%H%M%S')/" < $< > $@
+
+debian/changelog.raw:
+	./build/build.sh
 
 target/doc/latex/Makefile: target/doc/.doc
 	sleep 1; touch $@
