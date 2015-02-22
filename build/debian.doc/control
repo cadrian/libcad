@@ -1,0 +1,19 @@
+Source: libcad
+Priority: extra
+Maintainer: Cyril ADRIAN <cyril.adrian@gmail.com>
+Build-Depends: debhelper (>= 8.0.0), doxygen, texlive-fonts-extra
+Standards-Version: 3.9.3
+Section: libs
+Homepage: http://www.github.com/cadrian/libcad
+Vcs-Git: git://github.com/cadrian/libcad.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/yacjp.git;a=summary
+
+Package: libcad-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Recommends: libcad0 (= #VERSION#)
+Description: Cad's Addenda... by Cyril Adrian (aka Cad) -- doc
+ A collection of useful tools, in an object-oriented fashion.
+ .
+ The documentation.
