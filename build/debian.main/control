@@ -1,7 +1,7 @@
 Source: libcad
 Priority: extra
 Maintainer: Cyril ADRIAN <cyril.adrian@gmail.com>
-Build-Depends: debhelper (>= 8.0.0), doxygen, texlive-fonts-extra
+Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.3
 Section: libs
 Homepage: http://www.github.com/cadrian/libcad
