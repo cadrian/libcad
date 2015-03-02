@@ -138,7 +138,7 @@ static void grow(struct cad_hash_impl *this, int grow_factor) {
      cad_hash_entry_t field;
      int i, index;
      if (this->capacity == 0) {
-          new_capacity = 4;
+          new_capacity = grow_factor * grow_factor;
           new_entries = (cad_hash_entry_t *)this->memory.malloc(new_capacity * sizeof(cad_hash_entry_t));
           memset(new_entries, 0, new_capacity * sizeof(cad_hash_entry_t));
      }
