@@ -55,6 +55,12 @@ The library provides a general-purpose hash table. It may be used
 anywhere associative tables are needed.
 
 
+\defgroup cad_array Arrays
+
+The library provides a general-purpose array. It may be used
+anywhere arrays are needed.
+
+
 \defgroup cad_event_queue Event queues
 
 Event queues can be waited upon using event loops.

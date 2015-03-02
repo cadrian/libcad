@@ -1,3 +1,9 @@
+libcad (0.0.3#SNAPSHOT#) unstable; urgency=low
+
+  * Arrays
+
+ -- Cyril ADRIAN <cyril.adrian@gmail.com>  #DATE#
+
 libcad (0.0.2) unstable; urgency=low
 
   * Travis CI
