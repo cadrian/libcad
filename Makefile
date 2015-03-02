@@ -130,17 +130,6 @@ target/$(PROJECT)-htmldoc.tgz: target/doc/html/index.html
 
 target/doc/latex/version.tex: target/version
 	cp $< $@
-endif
-
-target/version: debian/changelog
-	mkdir -p target
-	head -n 1 debian/changelog | awk -F'[()]' '{print $$2}' > $@
-
-debian/changelog: debian/changelog.raw
-	sed "s/#DATE#/$(shell date -R)/;s/#SNAPSHOT#/$(shell date -u +'~%Y%m%d%H%M%S')/" < $< > $@
-
-debian/changelog.raw:
-	./build/build.sh
 
 target/doc/latex/Makefile: target/doc/.doc
 	sleep 1; touch $@
@@ -159,6 +148,17 @@ target/doc/.doc: Doxyfile target/gendoc.sh $(shell ls -1 src/*.c include/*.h doc
 
 target/gendoc.sh:
 	if test -e gendoc.sh; then ln -sf '../gendoc.sh' $@; else ln -sf /usr/share/libcad/gendoc.sh $@; fi
+endif
+
+target/version: debian/changelog
+	mkdir -p target
+	head -n 1 debian/changelog | awk -F'[()]' '{print $$2}' > $@
+
+debian/changelog: debian/changelog.raw
+	sed "s/#DATE#/$(shell date -R)/;s/#SNAPSHOT#/$(shell date -u +'~%Y%m%d%H%M%S')/" < $< > $@
+
+debian/changelog.raw:
+	./build/build.sh
 
 target/out/%.o: src/%.c include/*.h
 	@echo "Compiling library object: $<"
