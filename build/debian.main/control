@@ -2,6 +2,7 @@ Source: libcad
 Priority: extra
 Maintainer: Cyril ADRIAN <cyril.adrian@gmail.com>
 Build-Depends: debhelper (>= 8.0.0)
+Build-Depends-Indep: doxygen, texlive-fonts-extra
 Standards-Version: 3.9.3
 Section: libs
 Homepage: http://www.github.com/cadrian/libcad
@@ -25,3 +26,13 @@ Description: Cad's Addenda... by Cyril Adrian (aka Cad)
  A collection of useful tools, in an object-oriented fashion.
  .
  The main library.
+
+Package: libcad-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Recommends: libcad0 (= #VERSION#)
+Description: Cad's Addenda... by Cyril Adrian (aka Cad) -- doc
+ A collection of useful tools, in an object-oriented fashion.
+ .
+ The documentation.

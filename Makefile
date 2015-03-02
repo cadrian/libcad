@@ -42,7 +42,7 @@ install: target/version
 	-test -e gendoc.sh && cp Makefile release.sh gendoc.sh debian/tmp/usr/share/$(PROJECT)/ # libcad specific
 	env | sort
 
-release.main: target/dpkg/release.main
+release.main: target/dpkg/release.main release.doc
 
 target/dpkg/release.main: run-test lib target/version
 	@echo "Releasing main version $(shell cat target/version)"
@@ -53,7 +53,7 @@ target/dpkg/release.main: run-test lib target/version
 	mv ../$(PROJECT)_$(shell cat target/version).tar.[gx]z target/dpkg/
 	mv ../$(PROJECT)_$(shell cat target/version)_*.build   target/dpkg/
 	mv ../$(PROJECT)_$(shell cat target/version)_*.changes target/dpkg/
-	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(SOBJ) dpkg)
+	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(SOBJ) $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
 	touch target/dpkg/release.main
 
 lib: target/$(SOBJ) target/$(AOBJ)
@@ -101,15 +101,12 @@ target/$(AOBJ): $(OBJ)
 target/$(SOBJ).0: target/$(SOBJ)
 	(cd target && ln -sf $(PROJECT).so $(PROJECT).so.0)
 
-ifneq "$(wildcard /usr/bin/doxygen)" ""
+ifeq "$(wildcard /usr/bin/doxygen)" ""
+release.doc:
+else
 release.doc: target/dpkg/release.doc
 
 target/dpkg/release.doc: doc
-	@echo "Releasing doc version $(shell cat target/version)"
-	debuild -us -uc -nc -F
-	mkdir -p target/dpkg
-	mv ../$(PROJECT)*_$(shell cat target/version)_*.deb    target/dpkg/
-	(cd target && tar cfz $(PROJECT)_$(shell cat target/version)_$(shell gcc -v 2>&1 | grep '^Target:' | sed 's/^Target: //').tgz $(PROJECT).pdf $(PROJECT)-htmldoc.tgz dpkg)
 	touch target/dpkg/release.doc
 
 doc: target/$(PROJECT).pdf target/$(PROJECT)-htmldoc.tgz
