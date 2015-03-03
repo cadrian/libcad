@@ -36,15 +36,26 @@ static void check_array(cad_array_t *a, int count, ...) {
 }
 
 static int compare(const void *a, const void *b) {
-     return ((int)a) - ((int)b);
+     char *xa = *(char**)a;
+     char *xb = *(char**)b;
+     if (xa == NULL) {
+          if (xb == NULL) {
+               return 0;
+          }
+          return -1;
+     }
+     if (xb == NULL) {
+          return 1;
+     }
+     return strcmp(xa, xb);
 }
 
 int main() {
      cad_array_t *a = cad_new_array(stdlib_memory);
-     void *foo = (void*)1;
-     void *bar = (void*)2;
-     void *foo2 = (void*)42;
-     void *bar2 = (void*)13;
+     void *foo = "foo";
+     void *bar = "bar";
+     void *foo2 = "foo2";
+     void *bar2 = "bar2";
      void *val;
 
      assert(a->count(a) == 0);
@@ -70,7 +81,7 @@ int main() {
      check_array(a, 5, foo, bar, NULL, NULL, foo2);
 
      a->sort(a, compare);
-     check_array(a, 5, NULL, NULL, foo, bar, foo2);
+     check_array(a, 5, NULL, NULL, bar, foo, foo2);
 
      return 0;
 }
