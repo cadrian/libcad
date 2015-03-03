@@ -69,7 +69,7 @@ int main() {
      assert(val == bar2);
      check_array(a, 5, foo, bar, NULL, NULL, foo2);
 
-     a->sort(a);
+     a->sort(a, compare);
      check_array(a, 5, NULL, NULL, foo, bar, foo2);
 
      return 0;
