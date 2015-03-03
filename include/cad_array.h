@@ -100,31 +100,51 @@ typedef void *(*cad_array_update_fn) (cad_array_t *this, unsigned int index, voi
  */
 typedef void *(*cad_array_del_fn) (cad_array_t *this, unsigned int index);
 
+/**
+ * The comparator used to sort the array.
+ *
+ * @see cad_array_sort_fn
+ */
+typedef int(*comparator_fn)(const void*,const void*);
+
+/**
+ * Sorts the array using the `comparator`.
+ *
+ * @param[in] this the target array
+ * @param[in] comparator the values comparator
+ *
+ */
+typedef void (*cad_array_sort_fn) (cad_array_t *this, comparator_fn comparator);
+
 struct cad_array_s {
-   /**
-    * @see array_free_fn
-    */
-   cad_array_free_fn    free;
-   /**
-    * @see array_count_fn
-    */
-   cad_array_count_fn   count;
-   /**
-    * @see array_get_fn
-    */
-   cad_array_get_fn     get;
-   /**
-    * @see array_insert_fn
-    */
-   cad_array_insert_fn  insert;
-   /**
-    * @see array_update_fn
-    */
-   cad_array_update_fn  update;
-   /**
-    * @see array_del_fn
-    */
-   cad_array_del_fn     del;
+     /**
+      * @see array_free_fn
+      */
+     cad_array_free_fn    free;
+     /**
+      * @see array_count_fn
+      */
+     cad_array_count_fn   count;
+     /**
+      * @see array_get_fn
+      */
+     cad_array_get_fn     get;
+     /**
+      * @see array_insert_fn
+      */
+     cad_array_insert_fn  insert;
+     /**
+      * @see array_update_fn
+      */
+     cad_array_update_fn  update;
+     /**
+      * @see array_del_fn
+      */
+     cad_array_del_fn     del;
+     /**
+      * @see cad_array_sort_fn
+      */
+     cad_array_sort_fn sort;
 };
 
 /**

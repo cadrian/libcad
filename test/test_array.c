@@ -35,6 +35,10 @@ static void check_array(cad_array_t *a, int count, ...) {
      va_end(data);
 }
 
+static int compare(const void *a, const void *b) {
+     return ((int)a) - ((int)b);
+}
+
 int main() {
      cad_array_t *a = cad_new_array(stdlib_memory);
      void *foo = (void*)1;
@@ -64,6 +68,9 @@ int main() {
      val = a->del(a, 1);
      assert(val == bar2);
      check_array(a, 5, foo, bar, NULL, NULL, foo2);
+
+     a->sort(a);
+     check_array(a, 5, NULL, NULL, foo, bar, foo2);
 
      return 0;
 }
