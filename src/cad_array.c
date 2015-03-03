@@ -109,6 +109,10 @@ static void *del(struct cad_array_impl *this, unsigned int index) {
      return result;
 }
 
+static void sort(struct cad_array_impl *this, comparator_fn comparator) {
+     qsort(this->content, this->count, sizeof(void*), comparator);
+}
+
 static cad_array_t fn = {
      (cad_array_free_fn   )free_  ,
      (cad_array_count_fn  )count  ,
@@ -116,6 +120,7 @@ static cad_array_t fn = {
      (cad_array_insert_fn )insert ,
      (cad_array_update_fn )update ,
      (cad_array_del_fn    )del    ,
+     (cad_array_sort_fn   )sort   ,
 };
 
 __PUBLIC__ cad_array_t *cad_new_array(cad_memory_t memory) {
