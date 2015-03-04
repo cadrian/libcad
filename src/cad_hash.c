@@ -163,15 +163,29 @@ static unsigned int count(struct cad_hash_impl *this) {
      return this->count;
 }
 
-static void iterate(struct cad_hash_impl *this, cad_hash_iterator_fn iterator, void *data) {
+static void iterate_(struct cad_hash_impl *this, cad_hash_iterator_fn iterator, void *data, int clean) {
      int i, index = 0;
      cad_hash_entry_t entry;
      for (i = 0; index < this->count; i++) {
           entry = this->entries[i];
           if (entry.key.key) {
                iterator(this, index++, entry.key.key, entry.value, data);
+               if (clean) {
+                    this->keys.free(entry.key.key);
+                    entry.key.key= NULL;
+                    entry.value = NULL;
+               }
           }
      }
+}
+
+static void iterate(struct cad_hash_impl *this, cad_hash_iterator_fn iterator, void *data) {
+     iterate_(this, iterator, data, 0);
+}
+
+static void clean(struct cad_hash_impl *this, cad_hash_iterator_fn iterator, void *data) {
+     iterate_(this, iterator, data, 1);
+     this->count = 0;
 }
 
 static void *get(struct cad_hash_impl *this, const void *key) {

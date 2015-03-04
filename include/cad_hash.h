@@ -77,7 +77,7 @@ typedef unsigned int (*cad_hash_count_fn) (cad_hash_t *this);
  * `iterator` for each key.
  *
  * @param[in] this the target hash table
- * @param[in] iterator the function called once per key
+ * @param[in] iterator the function called once per key (cannot be NULL)
  * @param[in] data a user data pointer passed to the `iterator` function
  *
  */
@@ -120,6 +120,17 @@ typedef void *(*cad_hash_set_fn) (cad_hash_t *this, const void *key, void *value
  */
 typedef void *(*cad_hash_del_fn) (cad_hash_t *this, const void *key);
 
+/**
+ * Removes all the hash table's keys. Calls the provided
+ * `iterator` for each key, thus providing a way to cleanly free values.
+ *
+ * @param[in] this the target hash table
+ * @param[in] iterator the function called once per key (cannot be NULL)
+ * @param[in] data a user data pointer passed to the `iterator` function
+ *
+ */
+typedef void (*cad_hash_clean_fn)(cad_hash_t *this, cad_hash_iterator_fn iterator, void *data);
+
 struct cad_hash_s {
    /**
     * @see hash_free_fn
@@ -145,6 +156,10 @@ struct cad_hash_s {
     * @see hash_del_fn
     */
    cad_hash_del_fn     del;
+   /**
+    * @see hash_clean_fn
+    */
+   cad_hash_clean_fn clean;
 };
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -184,9 +199,9 @@ typedef const void *(*cad_hash_keys_clone_fn) (const void *key);
 
 /**
  * Frees the given `key` which is guaranteed to have been clone()d
- * by the hash table. Used at del() time.
+ * by the hash table. Used at del() and clean() times.
  */
-typedef void (*cad_hash_keys_free_fn) (const void *key);
+typedef void (*cad_hash_keys_free_fn) (void *key);
 
 /**
  * The user must provide an object with this public interface of the
