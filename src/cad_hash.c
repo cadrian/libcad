@@ -171,7 +171,7 @@ static void iterate_(struct cad_hash_impl *this, cad_hash_iterator_fn iterator, 
           if (entry.key.key) {
                iterator(this, index++, entry.key.key, entry.value, data);
                if (clean) {
-                    this->keys.free(entry.key.key);
+                    this->keys.free((void*)entry.key.key);
                     entry.key.key= NULL;
                     entry.value = NULL;
                }
@@ -232,7 +232,7 @@ static void *del(struct cad_hash_impl *this, const void *key) {
 
      if (index >= 0) {
           result = this->entries[index].value;
-          this->keys.free(this->entries[index].key.key);
+          this->keys.free((void*)this->entries[index].key.key);
           this->entries[index].key.key = NULL;
           this->entries[index].value   = NULL;
           this->count--;
@@ -253,6 +253,7 @@ static cad_hash_t fn = {
      (cad_hash_get_fn    )get    ,
      (cad_hash_set_fn    )set    ,
      (cad_hash_del_fn    )del    ,
+     (cad_hash_clean_fn  )clean  ,
 };
 
 __PUBLIC__ cad_hash_t *cad_new_hash(cad_memory_t memory, cad_hash_keys_t keys) {

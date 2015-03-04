@@ -17,8 +17,10 @@ BUILD_DIR ?= $(shell pwd)
 AOBJ=$(PROJECT).a
 ifeq "$(wildcard /etc/setup/setup.rc)" ""
 SOBJ=$(PROJECT).so
+PICFLAG=-fPIC
 else
 SOBJ=cyg$(shell echo $(PROJECT) | sed 's/^lib//').dll
+PICFLAG=
 endif
 
 ifeq "$(wildcard /usr/bin/doxygen)" ""
@@ -77,13 +79,13 @@ target/test: $(shell find test/data -type f)
 ifeq "$(wildcard /etc/setup/setup.rc)" ""
 target/$(SOBJ): $(PIC_OBJ)
 	@echo "Linking shared library: $@"
-	$(CC) -shared -fPIC -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) $(LINK_LIBS)
+	$(CC) -shared $(PICFLAG) -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) -Wall -Werror $(LINK_LIBS)
 	strip --strip-unneeded $@
 	@echo
 else
 target/$(SOBJ): $(PIC_OBJ)
 	@echo "Linking shared library: $@"
-	$(CC) -shared -o $@ \
+	$(CC) -shared -o $@ -Wall -Werror \
 		-Wl,--out-implib=target/$(PROJECT).dll.a \
 		-Wl,--export-all-symbols \
 		-Wl,--enable-auto-import \
@@ -160,17 +162,17 @@ debian/changelog.raw:
 target/out/%.o: src/%.c include/*.h
 	@echo "Compiling library object: $<"
 	mkdir -p target/out
-	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -fvisibility=hidden -I $(BUILD_DIR)/include -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -Werror -fvisibility=hidden -I $(BUILD_DIR)/include -c $< -o $@
 
 target/out/%.po: src/%.c include/*.h
 	@echo "Compiling PIC library object: $<"
 	mkdir -p target/out
-	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -fPIC -fvisibility=hidden -I $(BUILD_DIR)/include -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -Werror $(PICFLAG) -fvisibility=hidden -I $(BUILD_DIR)/include -c $< -o $@
 
 target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	@echo "Compiling test: $<"
 	mkdir -p target/out
-	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -L $(BUILD_DIR)/target -I $(BUILD_DIR)/include -o $@ $< $(LINK_LIBS) $(PROJECT:lib%=-l%)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -Werror -L $(BUILD_DIR)/target -I $(BUILD_DIR)/include -o $@ $< $(LINK_LIBS) $(PROJECT:lib%=-l%)
 
 .PHONY: all lib doc clean run-test release.main release.doc
 #.SILENT:
