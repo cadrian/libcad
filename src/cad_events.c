@@ -116,6 +116,9 @@ static int wait_selector(events_impl_t *this, void *data) {
                }
           }
      } // else res < 0 => error (returned)
+     FD_ZERO(&(this->fd.selector.read));
+     FD_ZERO(&(this->fd.selector.write));
+     FD_ZERO(&(this->fd.selector.exception));
      return res;
 }
 
@@ -200,6 +203,7 @@ static int wait_poller(events_impl_t *this, void *data) {
                }
           }
      } // else res < 0 => error (returned)
+     this->fd.poller.count = 0;
      return res;
 }
 
