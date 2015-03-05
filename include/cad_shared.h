@@ -43,6 +43,17 @@
 typedef void *(*cad_malloc_fn)(size_t size);
 
 /**
+ * The memory reallocator.
+ * Works like `realloc(3)`.
+ *
+ * @param[in] ptr the pointer to reallocate.
+ * @param[in] size the new size (in bytes) of the requested memory chunk to allocate.
+ *
+ * @return the newly allocated memory chunk, or `NULL` if it could not be allocated.
+ */
+typedef void *(*cad_realloc_fn)(void *ptr, size_t size);
+
+/**
  * The memory deallocator.
  * Works like `free(3)`.
  *
@@ -60,6 +71,11 @@ typedef struct cad_memory {
     * @see cad_malloc_fn
     */
    cad_malloc_fn malloc;
+
+   /**
+    * @see cad_realloc_fn
+    */
+   cad_realloc_fn realloc;
 
    /**
     * @see cad_free_fn

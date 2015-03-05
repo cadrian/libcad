@@ -54,20 +54,14 @@ static void *get(struct cad_array_impl *this, unsigned int index) {
 
 static void grow(struct cad_array_impl *this, int grow_factor) {
      int new_capacity;
-     void **new_content;
      if (this->capacity == 0) {
           new_capacity = grow_factor * grow_factor;
-          new_content = (void**)this->memory.malloc(new_capacity * sizeof(void*));
-          memset(new_content, 0, new_capacity * sizeof(void*));
+          this->content = (void**)this->memory.malloc(new_capacity * sizeof(void*));
      } else {
           new_capacity = this->capacity * grow_factor;
-          new_content = (void**)this->memory.malloc(new_capacity * sizeof(void*));
-          memset(new_content + this->capacity, 0, this->capacity * sizeof(void*));
-          memcpy(new_content, this->content, this->capacity * sizeof(void*));
-          this->memory.free(this->content);
+          this->content = (void**)this->memory.realloc(this->content, new_capacity * sizeof(void*));
      }
      this->capacity = new_capacity;
-     this->content = new_content;
 }
 
 static void insert(struct cad_array_impl *this, unsigned int index, void *value) {

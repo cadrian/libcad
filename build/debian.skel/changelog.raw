@@ -2,6 +2,7 @@ libcad (0.0.3#SNAPSHOT#) unstable; urgency=low
 
   * Arrays
   * Events selector using ppoll(2)
+  * Added realloc() to memory, improved reallocation algorigthms
 
  -- Cyril ADRIAN <cyril.adrian@gmail.com>  #DATE#
 

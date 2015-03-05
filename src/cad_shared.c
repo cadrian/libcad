@@ -26,5 +26,5 @@
 #include "cad_shared.h"
 
 __PUBLIC__ cad_memory_t stdlib_memory = {
-     malloc, free
+     malloc, realloc, free
 };

@@ -149,9 +149,7 @@ static struct pollfd *find_pollfd(events_impl_t *this, int fd) {
                     list = this->memory.malloc(capacity * sizeof(struct pollfd));
                } else {
                     capacity *= 2;
-                    list = this->memory.malloc(capacity * sizeof(struct pollfd));
-                    memcpy(list, this->fd.poller.list, count * sizeof(struct pollfd));
-                    this->memory.free(this->fd.poller.list);
+                    list = this->memory.realloc(list, capacity * sizeof(struct pollfd));
                }
                this->fd.poller.capacity = capacity;
                this->fd.poller.list = list;

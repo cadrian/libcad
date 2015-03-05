@@ -133,30 +133,19 @@ static void rehash(struct cad_hash_impl *this) {
 }
 
 static void grow(struct cad_hash_impl *this, int grow_factor) {
-     cad_hash_entry_t *new_entries;
      int new_capacity;
-     cad_hash_entry_t field;
-     int i, index;
      if (this->capacity == 0) {
           new_capacity = grow_factor * grow_factor;
-          new_entries = (cad_hash_entry_t *)this->memory.malloc(new_capacity * sizeof(cad_hash_entry_t));
-          memset(new_entries, 0, new_capacity * sizeof(cad_hash_entry_t));
+          this->entries = (cad_hash_entry_t *)this->memory.malloc(new_capacity * sizeof(cad_hash_entry_t));
+          memset(this->entries, 0, new_capacity * sizeof(cad_hash_entry_t));
      }
      else {
           new_capacity = this->capacity * grow_factor;
-          new_entries = (cad_hash_entry_t *)this->memory.malloc(new_capacity * sizeof(cad_hash_entry_t));
-          memset(new_entries, 0, new_capacity * sizeof(cad_hash_entry_t));
-          for (i = 0; i < this->capacity; i++) {
-               field = this->entries[i];
-               if (field.key.key) {
-                    index = -index_of(new_entries, this->keys, new_capacity, field.key, NULL) - 1;
-                    new_entries[index] = field;
-               }
-          }
-          this->memory.free(this->entries);
+          this->entries = (cad_hash_entry_t *)this->memory.realloc(this->entries, new_capacity * sizeof(cad_hash_entry_t));
+          memset(this->entries + this->capacity, 0, this->capacity * sizeof(cad_hash_entry_t));
+          rehash(this);
      }
      this->capacity = new_capacity;
-     this->entries = new_entries;
 }
 
 static unsigned int count(struct cad_hash_impl *this) {
