@@ -202,12 +202,20 @@ struct cad_events_s {
 };
 
 /**
- * Allocates and return a new events loop implemented using select(2).
+ * Allocates and return a new events loop implemented using pselect(2).
  *
  * @return the newly allocated events loop
  *
  */
 __PUBLIC__ cad_events_t *cad_new_events_selector(cad_memory_t memory);
+
+/**
+ * Allocates and return a new events loop implemented using poll(2).
+ *
+ * @return the newly allocated events loop
+ *
+ */
+__PUBLIC__ cad_events_t *cad_new_events_poller(cad_memory_t memory);
 
 /**
  * @}

@@ -14,8 +14,13 @@
   along with libCad.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define _GNU_SOURCE
+
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/select.h>
+#include <poll.h>
 
 /**
  * @ingroup cad_events
@@ -27,111 +32,234 @@
 #include "cad_events.h"
 
 typedef struct {
-   cad_events_t fn;
-   cad_memory_t memory;
-   fd_set fd_read, fd_write, fd_exception;
-   struct timespec timeout;
-   void (*on_timeout)(void *);
-   void (*on_read)(int, void *);
-   void (*on_write)(int, void *);
-   void (*on_exception)(int, void *);
-   int max_fd;
-} events_selector_t;
+     cad_events_t fn;
+     cad_memory_t memory;
+     union {
+          struct {
+               fd_set read, write, exception;
+               int max;
+          } selector;
+          struct {
+               struct pollfd *list;
+               nfds_t count, capacity;
+          } poller;
+     } fd;
+     struct timespec timeout;
+     void (*on_timeout)(void *);
+     void (*on_read)(int, void *);
+     void (*on_write)(int, void *);
+     void (*on_exception)(int, void *);
+} events_impl_t;
 
-static void set_timeout_selector(events_selector_t *this, unsigned long timeout_us) {
-   this->timeout.tv_sec = (long)(timeout_us / 1000000UL);
-   this->timeout.tv_nsec = (long)(timeout_us % 1000000UL) * 1000L;
+static void set_timeout_impl(events_impl_t *this, unsigned long timeout_us) {
+     this->timeout.tv_sec = (long)(timeout_us / 1000000UL);
+     this->timeout.tv_nsec = (long)(timeout_us % 1000000UL) * 1000L;
 }
 
-static void set_read_selector(events_selector_t *this, int fd) {
-   FD_SET(fd, &(this->fd_read));
-   if (this->max_fd < fd) {
-      this->max_fd = fd;
-   }
+static void on_timeout_impl(events_impl_t *this, void (*action)(void *)) {
+     this->on_timeout = action;
 }
 
-static void set_write_selector(events_selector_t *this, int fd) {
-   FD_SET(fd, &(this->fd_write));
-   if (this->max_fd < fd) {
-      this->max_fd = fd;
-   }
+static void on_read_impl(events_impl_t *this, void (*action)(int, void *)) {
+     this->on_read = action;
 }
 
-static void set_exception_selector(events_selector_t *this, int fd) {
-   FD_SET(fd, &(this->fd_exception));
-   if (this->max_fd < fd) {
-      this->max_fd = fd;
-   }
+static void on_write_impl(events_impl_t *this, void (*action)(int, void *)) {
+     this->on_write = action;
 }
 
-static void on_timeout_selector(events_selector_t *this, void (*action)(void *)) {
-   this->on_timeout = action;
+static void on_exception_impl(events_impl_t *this, void (*action)(int, void *)) {
+     this->on_exception = action;
 }
 
-static void on_read_selector(events_selector_t *this, void (*action)(int, void *)) {
-   this->on_read = action;
+static void set_read_selector(events_impl_t *this, int fd) {
+     FD_SET(fd, &(this->fd.selector.read));
+     if (this->fd.selector.max < fd) {
+          this->fd.selector.max = fd;
+     }
 }
 
-static void on_write_selector(events_selector_t *this, void (*action)(int, void *)) {
-   this->on_write = action;
+static void set_write_selector(events_impl_t *this, int fd) {
+     FD_SET(fd, &(this->fd.selector.write));
+     if (this->fd.selector.max < fd) {
+          this->fd.selector.max = fd;
+     }
 }
 
-static void on_exception_selector(events_selector_t *this, void (*action)(int, void *)) {
-   this->on_exception = action;
+static void set_exception_selector(events_impl_t *this, int fd) {
+     FD_SET(fd, &(this->fd.selector.exception));
+     if (this->fd.selector.max < fd) {
+          this->fd.selector.max = fd;
+     }
 }
 
-static int wait_selector(events_selector_t *this, void *data) {
-   int res;
-   int i;
-   fd_set r = this->fd_read, w = this->fd_write, x = this->fd_exception;
-   struct timespec t = this->timeout;
-   res = pselect(this->max_fd + 1, &r, &w, &x, &t, NULL);
-   if (res == 0) {
-      if (this->on_timeout != NULL) {
-         this->on_timeout(data);
-      }
-   } else if (res > 0) {
-      for (i = 0; i <= this->max_fd; i++) {
-         if (this->on_read != NULL && FD_ISSET(i, &(this->fd_read)) && FD_ISSET(i, &r)) {
-            this->on_read(i, data);
-         }
-         if (this->on_write != NULL && FD_ISSET(i, &(this->fd_write)) && FD_ISSET(i, &w)) {
-            this->on_write(i, data);
-         }
-         if (this->on_exception != NULL && FD_ISSET(i, &(this->fd_exception)) && FD_ISSET(i, &x)) {
-            this->on_exception(i, data);
-         }
-      }
-   } // else res < 0 => error (returned)
-   return res;
+static int wait_selector(events_impl_t *this, void *data) {
+     int res;
+     int i;
+     fd_set r = this->fd.selector.read, w = this->fd.selector.write, x = this->fd.selector.exception;
+     struct timespec t = this->timeout;
+     res = pselect(this->fd.selector.max + 1, &r, &w, &x, &t, NULL);
+     if (res == 0) {
+          if (this->on_timeout != NULL) {
+               this->on_timeout(data);
+          }
+     } else if (res > 0) {
+          for (i = 0; i <= this->fd.selector.max; i++) {
+               if (this->on_read != NULL && FD_ISSET(i, &(this->fd.selector.read)) && FD_ISSET(i, &r)) {
+                    this->on_read(i, data);
+               }
+               if (this->on_write != NULL && FD_ISSET(i, &(this->fd.selector.write)) && FD_ISSET(i, &w)) {
+                    this->on_write(i, data);
+               }
+               if (this->on_exception != NULL && FD_ISSET(i, &(this->fd.selector.exception)) && FD_ISSET(i, &x)) {
+                    this->on_exception(i, data);
+               }
+          }
+     } // else res < 0 => error (returned)
+     FD_ZERO(&(this->fd.selector.read));
+     FD_ZERO(&(this->fd.selector.write));
+     FD_ZERO(&(this->fd.selector.exception));
+     return res;
 }
 
-static void free_selector(events_selector_t *this) {
-   this->memory.free(this);
+static void free_selector(events_impl_t *this) {
+     this->memory.free(this);
+}
+
+static struct pollfd *find_pollfd(events_impl_t *this, int fd) {
+     struct pollfd *result = NULL;
+     nfds_t count = this->fd.poller.count;
+     nfds_t capacity = this->fd.poller.capacity;
+     struct pollfd *list = this->fd.poller.list;
+     int i;
+
+     for (i = 0; result == NULL && i < count; i++) {
+          if (list[i].fd == fd) {
+               result = list + i;
+          }
+     }
+     if (result == NULL) {
+          if (count == capacity) {
+               if (count == 0) {
+                    capacity = 16;
+                    list = this->memory.malloc(capacity * sizeof(struct pollfd));
+               } else {
+                    capacity *= 2;
+                    list = this->memory.malloc(capacity * sizeof(struct pollfd));
+                    memcpy(list, this->fd.poller.list, count * sizeof(struct pollfd));
+                    this->memory.free(this->fd.poller.list);
+               }
+               this->fd.poller.capacity = capacity;
+               this->fd.poller.list = list;
+          }
+
+          result = list + count;
+          this->fd.poller.count = count + 1;
+          result->fd = fd;
+          result->events = result->revents = 0;
+     }
+
+     return result;
+}
+
+static void set_read_poller(events_impl_t *this, int fd) {
+     struct pollfd *p = find_pollfd(this, fd);
+     p->events |= POLLIN;
+}
+
+static void set_write_poller(events_impl_t *this, int fd) {
+     struct pollfd *p = find_pollfd(this, fd);
+     p->events |= POLLOUT;
+}
+
+static void set_exception_poller(events_impl_t *this, int fd) {
+     struct pollfd *p = find_pollfd(this, fd);
+     p->events |= POLLERR | POLLHUP;
+}
+
+static int wait_poller(events_impl_t *this, void *data) {
+     int res;
+     int i;
+     struct timespec t = this->timeout;
+     struct pollfd *p;
+     res = ppoll(this->fd.poller.list, this->fd.poller.count, &t, NULL);
+     if (res == 0) {
+          if (this->on_timeout != NULL) {
+               this->on_timeout(data);
+          }
+     } else if (res > 0) {
+          for (i = 0; i <= this->fd.poller.count; i++) {
+               p = this->fd.poller.list + i;
+               if (p->revents) {
+                    if (p->revents & POLLIN) {
+                         this->on_read(i, data);
+                    }
+                    if (p->revents & POLLOUT) {
+                         this->on_write(i, data);
+                    }
+                    if (p->revents & (POLLERR | POLLHUP)) {
+                         this->on_exception(i, data);
+                    }
+               }
+          }
+     } // else res < 0 => error (returned)
+     this->fd.poller.count = 0;
+     return res;
+}
+
+static void free_poller(events_impl_t *this) {
+     this->memory.free(this->fd.poller.list);
+     this->memory.free(this);
 }
 
 cad_events_t fn_selector = {
-   .set_timeout   = (cad_events_set_timeout_fn)set_timeout_selector,
-   .set_read      = (cad_events_set_read_fn)set_read_selector,
-   .set_write     = (cad_events_set_write_fn)set_write_selector,
-   .set_exception = (cad_events_set_exception_fn)set_exception_selector,
-   .on_timeout    = (cad_events_on_timeout_fn)on_timeout_selector,
-   .on_read       = (cad_events_on_read_fn)on_read_selector,
-   .on_write      = (cad_events_on_write_fn)on_write_selector,
-   .on_exception  = (cad_events_on_exception_fn)on_exception_selector,
-   .wait          = (cad_events_wait_fn)wait_selector,
-   .free          = (cad_events_free_fn)free_selector,
+     .set_timeout   = (cad_events_set_timeout_fn)set_timeout_impl,
+     .set_read      = (cad_events_set_read_fn)set_read_selector,
+     .set_write     = (cad_events_set_write_fn)set_write_selector,
+     .set_exception = (cad_events_set_exception_fn)set_exception_selector,
+     .on_timeout    = (cad_events_on_timeout_fn)on_timeout_impl,
+     .on_read       = (cad_events_on_read_fn)on_read_impl,
+     .on_write      = (cad_events_on_write_fn)on_write_impl,
+     .on_exception  = (cad_events_on_exception_fn)on_exception_impl,
+     .wait          = (cad_events_wait_fn)wait_selector,
+     .free          = (cad_events_free_fn)free_selector,
+};
+
+cad_events_t fn_poller = {
+     .set_timeout   = (cad_events_set_timeout_fn)set_timeout_impl,
+     .set_read      = (cad_events_set_read_fn)set_read_poller,
+     .set_write     = (cad_events_set_write_fn)set_write_poller,
+     .set_exception = (cad_events_set_exception_fn)set_exception_poller,
+     .on_timeout    = (cad_events_on_timeout_fn)on_timeout_impl,
+     .on_read       = (cad_events_on_read_fn)on_read_impl,
+     .on_write      = (cad_events_on_write_fn)on_write_impl,
+     .on_exception  = (cad_events_on_exception_fn)on_exception_impl,
+     .wait          = (cad_events_wait_fn)wait_poller,
+     .free          = (cad_events_free_fn)free_poller,
 };
 
 __PUBLIC__ cad_events_t *cad_new_events_selector(cad_memory_t memory) {
-   events_selector_t *result = (events_selector_t *)memory.malloc(sizeof(events_selector_t));
-   if (result) {
-      result->fn = fn_selector;
-      result->memory = memory;
-      result->timeout.tv_sec = result->timeout.tv_nsec = 0;
-      FD_ZERO(&(result->fd_read));
-      FD_ZERO(&(result->fd_write));
-      FD_ZERO(&(result->fd_exception));
-   }
-   return (cad_events_t *)result; // &(result->fn)
+     events_impl_t *result = (events_impl_t *)memory.malloc(sizeof(events_impl_t));
+     if (result) {
+          result->fn = fn_selector;
+          result->memory = memory;
+          result->timeout.tv_sec = result->timeout.tv_nsec = 0;
+          FD_ZERO(&(result->fd.selector.read));
+          FD_ZERO(&(result->fd.selector.write));
+          FD_ZERO(&(result->fd.selector.exception));
+          result->fd.selector.max = 0;
+     }
+     return (cad_events_t *)result; // &(result->fn)
+}
+
+__PUBLIC__ cad_events_t *cad_new_events_poller(cad_memory_t memory) {
+     events_impl_t *result = (events_impl_t *)memory.malloc(sizeof(events_impl_t));
+     if (result) {
+          result->fn = fn_poller;
+          result->memory = memory;
+          result->timeout.tv_sec = result->timeout.tv_nsec = 0;
+          result->fd.poller.list = NULL;
+          result->fd.poller.count = 0;
+     }
+     return (cad_events_t *)result; // &(result->fn)
 }
