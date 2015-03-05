@@ -1,6 +1,7 @@
 libcad (0.0.3#SNAPSHOT#) unstable; urgency=low
 
   * Arrays
+  * Events selector using ppoll(2)
 
  -- Cyril ADRIAN <cyril.adrian@gmail.com>  #DATE#
 
@@ -8,7 +9,7 @@ libcad (0.0.2) unstable; urgency=low
 
   * Travis CI
 
- -- Cyril ADRIAN <cyril.adrian@gmail.com>  #DATE#
+ -- Cyril ADRIAN <cyril.adrian@gmail.com>  Mon, 02 Mar 2015 18:25:06 +0000
 
 libcad (0.0.1) unstable; urgency=low
 
