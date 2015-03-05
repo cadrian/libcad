@@ -112,6 +112,11 @@ static void sort(struct cad_array_impl *this, comparator_fn comparator) {
      qsort(this->content, this->count, this->eltsize, comparator);
 }
 
+static void clear(struct cad_array_impl *this) {
+     memset(this->content, 0, this->capacity * this->eltsize);
+     this->count = 0;
+}
+
 static cad_array_t fn = {
      (cad_array_free_fn   )free_  ,
      (cad_array_count_fn  )count  ,
@@ -120,6 +125,7 @@ static cad_array_t fn = {
      (cad_array_update_fn )update ,
      (cad_array_del_fn    )del    ,
      (cad_array_sort_fn   )sort   ,
+     (cad_array_clear_fn  )clear  ,
 };
 
 __PUBLIC__ cad_array_t *cad_new_array(cad_memory_t memory, size_t size) {

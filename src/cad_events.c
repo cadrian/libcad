@@ -34,6 +34,7 @@
  */
 
 #include "cad_events.h"
+#include "cad_array.h"
 
 typedef struct {
      cad_events_t fn;
@@ -43,10 +44,7 @@ typedef struct {
                fd_set read, write, exception;
                int max;
           } selector;
-          struct {
-               struct pollfd *list;
-               nfds_t count, capacity;
-          } poller;
+          cad_array_t *poller;
      } fd;
      struct timespec timeout;
      void (*on_timeout)(void *);
@@ -132,33 +130,21 @@ static void free_selector(events_impl_t *this) {
 
 static struct pollfd *find_pollfd(events_impl_t *this, int fd) {
      struct pollfd *result = NULL;
-     nfds_t count = this->fd.poller.count;
-     nfds_t capacity = this->fd.poller.capacity;
-     struct pollfd *list = this->fd.poller.list;
+     struct pollfd *p;
+     struct pollfd n;
+     nfds_t count = this->fd.poller->count(this->fd.poller);
      int i;
 
      for (i = 0; result == NULL && i < count; i++) {
-          if (list[i].fd == fd) {
-               result = list + i;
+          p = this->fd.poller->get(this->fd.poller, i);
+          if (p->fd == fd) {
+               result = p;
           }
      }
      if (result == NULL) {
-          if (count == capacity) {
-               if (count == 0) {
-                    capacity = 16;
-                    list = this->memory.malloc(capacity * sizeof(struct pollfd));
-               } else {
-                    capacity *= 2;
-                    list = this->memory.realloc(list, capacity * sizeof(struct pollfd));
-               }
-               this->fd.poller.capacity = capacity;
-               this->fd.poller.list = list;
-          }
-
-          result = list + count;
-          this->fd.poller.count = count + 1;
-          result->fd = fd;
-          result->events = result->revents = 0;
+          n.fd = fd;
+          n.events = n.revents = 0;
+          result = this->fd.poller->insert(this->fd.poller, this->fd.poller->count(this->fd.poller), &n);
      }
 
      return result;
@@ -181,17 +167,17 @@ static void set_exception_poller(events_impl_t *this, int fd) {
 
 static int wait_poller(events_impl_t *this, void *data) {
      int res;
-     int i;
+     int i, n = this->fd.poller->count(this->fd.poller);
      struct timespec t = this->timeout;
      struct pollfd *p;
-     res = ppoll(this->fd.poller.list, this->fd.poller.count, &t, NULL);
+     res = ppoll(this->fd.poller->get(this->fd.poller, 0), (nfds_t)n, &t, NULL);
      if (res == 0) {
           if (this->on_timeout != NULL) {
                this->on_timeout(data);
           }
      } else if (res > 0) {
-          for (i = 0; i <= this->fd.poller.count; i++) {
-               p = this->fd.poller.list + i;
+          for (i = 0; i <= n; i++) {
+               p = this->fd.poller->get(this->fd.poller, i);
                if (p->revents) {
                     if (p->revents & POLLIN) {
                          this->on_read(p->fd, data);
@@ -205,12 +191,12 @@ static int wait_poller(events_impl_t *this, void *data) {
                }
           }
      } // else res < 0 => error (returned)
-     this->fd.poller.count = 0;
+     this->fd.poller->clear(this->fd.poller);
      return res;
 }
 
 static void free_poller(events_impl_t *this) {
-     this->memory.free(this->fd.poller.list);
+     this->fd.poller->free(this->fd.poller);
      this->memory.free(this);
 }
 
@@ -260,8 +246,7 @@ __PUBLIC__ cad_events_t *cad_new_events_poller(cad_memory_t memory) {
           result->fn = fn_poller;
           result->memory = memory;
           result->timeout.tv_sec = result->timeout.tv_nsec = 0;
-          result->fd.poller.list = NULL;
-          result->fd.poller.count = 0;
+          result->fd.poller = cad_new_array(stdlib_memory, sizeof(struct pollfd));
      }
      return (cad_events_t *)result; // &(result->fn)
 }

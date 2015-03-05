@@ -112,11 +112,21 @@ typedef int(*comparator_fn)(const void*,const void*);
 /**
  * Sorts the array using the `comparator`.
  *
+ * Note: if the values were malloc()ed the client must free() them beforehand.
+ *
  * @param[in] this the target array
  * @param[in] comparator the values comparator
  *
  */
 typedef void (*cad_array_sort_fn) (cad_array_t *this, comparator_fn comparator);
+
+/**
+ * Empties the array.
+ *
+ * @param[in] this the target array
+ *
+ */
+typedef void (*cad_array_clear_fn) (cad_array_t *this);
 
 struct cad_array_s {
      /**
@@ -147,6 +157,10 @@ struct cad_array_s {
       * @see cad_array_sort_fn
       */
      cad_array_sort_fn sort;
+     /**
+      * @see cad_array_clear_fn
+      */
+     cad_array_clear_fn clear;
 };
 
 /**
