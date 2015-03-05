@@ -172,8 +172,6 @@ static void iterate_(struct cad_hash_impl *this, cad_hash_iterator_fn iterator, 
                iterator(this, index++, entry.key.key, entry.value, data);
                if (clean) {
                     this->keys.free((void*)entry.key.key);
-                    entry.key.key= NULL;
-                    entry.value = NULL;
                }
           }
      }
@@ -186,6 +184,7 @@ static void iterate(struct cad_hash_impl *this, cad_hash_iterator_fn iterator, v
 static void clean(struct cad_hash_impl *this, cad_hash_iterator_fn iterator, void *data) {
      iterate_(this, iterator, data, 1);
      this->count = 0;
+     memset(this->entries, 0, this->capacity * sizeof(cad_hash_entry_t));
 }
 
 static void *get(struct cad_hash_impl *this, const void *key) {
