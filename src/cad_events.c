@@ -22,6 +22,10 @@
 #include <sys/select.h>
 #include <poll.h>
 
+#ifndef POLLRDHUP
+#define POLLRDHUP 0
+#endif
+
 /**
  * @ingroup cad_events
  * @file
@@ -174,7 +178,7 @@ static void set_write_poller(events_impl_t *this, int fd) {
 
 static void set_exception_poller(events_impl_t *this, int fd) {
      struct pollfd *p = find_pollfd(this, fd);
-     p->events |= POLLERR | POLLHUP;
+     p->events |= POLLERR | POLLHUP | POLLRDHUP;
 }
 
 static int wait_poller(events_impl_t *this, void *data) {
@@ -192,13 +196,13 @@ static int wait_poller(events_impl_t *this, void *data) {
                p = this->fd.poller.list + i;
                if (p->revents) {
                     if (p->revents & POLLIN) {
-                         this->on_read(i, data);
+                         this->on_read(p->fd, data);
                     }
                     if (p->revents & POLLOUT) {
-                         this->on_write(i, data);
+                         this->on_write(p->fd, data);
                     }
-                    if (p->revents & (POLLERR | POLLHUP)) {
-                         this->on_exception(i, data);
+                    if (p->revents & (POLLERR | POLLHUP | POLLRDHUP)) {
+                         this->on_exception(p->fd, data);
                     }
                }
           }
