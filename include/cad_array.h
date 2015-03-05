@@ -21,7 +21,7 @@
  * @ingroup cad_array
  * @file
  *
- * An array. Accepts any kinds of pointers as values.
+ * An array. Accepts any kinds values as long as they have the same size.
  */
 
 #include "cad_shared.h"
@@ -57,7 +57,9 @@ typedef void (*cad_array_free_fn) (cad_array_t *this);
 typedef unsigned int (*cad_array_count_fn) (cad_array_t *this);
 
 /**
- * Retrieves the `index`-th value.
+ * Retrieves the pointer to the `index`-th value.
+ *
+ * Note: this being an array, the elements are sure to be continuous.
  *
  * @param[in] this the target array
  * @param[in] index the index to lookup
@@ -74,7 +76,7 @@ typedef void *(*cad_array_get_fn) (cad_array_t *this, unsigned int index);
  * @param[in] index the index of the value to set
  * @param[in] value the value
  *
- * @return the pointer to the inserted value
+ * @return the pointer to the inserted value.
  *
  */
 typedef void *(*cad_array_insert_fn) (cad_array_t *this, unsigned int index, void *value);
@@ -86,7 +88,7 @@ typedef void *(*cad_array_insert_fn) (cad_array_t *this, unsigned int index, voi
  * @param[in] index the index of the value to set
  * @param[in] value the value
  *
- * @return the pointer to the updated value
+ * @return the pointer to the updated value.
  *
  */
 typedef void *(*cad_array_update_fn) (cad_array_t *this, unsigned int index, void *value);

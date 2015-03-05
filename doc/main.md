@@ -35,7 +35,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with libCad.  If not, see http://www.gnu.org/licenses/
 
-Copyleft © 2012 Cyril ADRIAN
+Copyleft © 2012--2015 Cyril ADRIAN
 
 
 \defgroup cad_utils Tools
