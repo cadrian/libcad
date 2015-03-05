@@ -95,7 +95,7 @@ typedef void (*cad_events_set_read_fn)(cad_events_t *this, int fd);
 typedef void (*cad_events_set_write_fn)(cad_events_t *this, int fd);
 
 /**
- * Sets an exceptin file descriptor that must be waited upon.
+ * Sets an exception file descriptor that must be waited upon.
  *
  * @param[in] this the target event loop
  * @param[in] fd the file descriptor to wait for an exception
