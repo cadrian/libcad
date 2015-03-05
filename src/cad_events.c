@@ -169,15 +169,14 @@ static int wait_poller(events_impl_t *this, void *data) {
      int res;
      int i, n = this->fd.poller->count(this->fd.poller);
      struct timespec t = this->timeout;
-     struct pollfd *p;
-     res = ppoll(this->fd.poller->get(this->fd.poller, 0), (nfds_t)n, &t, NULL);
+     struct pollfd *p = this->fd.poller->get(this->fd.poller, 0);
+     res = ppoll(p, (nfds_t)n, &t, NULL);
      if (res == 0) {
           if (this->on_timeout != NULL) {
                this->on_timeout(data);
           }
      } else if (res > 0) {
-          for (i = 0; i <= n; i++) {
-               p = this->fd.poller->get(this->fd.poller, i);
+          for (i = 0; i <= n; p++, i++) {
                if (p->revents) {
                     if (p->revents & POLLIN) {
                          this->on_read(p->fd, data);
