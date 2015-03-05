@@ -24,13 +24,15 @@ static void check_array(cad_array_t *a, int count, ...) {
      va_list data;
      int index;
      void *value;
+     void **elt;
 
      assert(a->count(a) == count);
 
      va_start(data, count);
      for (index = 0; index < count; index++) {
           value = va_arg(data, void*);
-          assert(value == a->get(a, index));
+          elt = (void**)a->get(a, index);
+          assert(value == *elt);
      }
      va_end(data);
 }
@@ -51,33 +53,33 @@ static int compare(const void *a, const void *b) {
 }
 
 int main() {
-     cad_array_t *a = cad_new_array(stdlib_memory);
-     void *foo = "foo";
-     void *bar = "bar";
-     void *foo2 = "foo2";
-     void *bar2 = "bar2";
-     void *val;
+     cad_array_t *a = cad_new_array(stdlib_memory, sizeof(char*));
+     char *foo = "foo";
+     char *bar = "bar";
+     char *foo2 = "foo2";
+     char *bar2 = "bar2";
+     char**val;
 
      assert(a->count(a) == 0);
 
-     a->insert(a, 0, foo);
+     a->insert(a, 0, &foo);
      check_array(a, 1, foo);
 
-     a->insert(a, 1, bar);
+     a->insert(a, 1, &bar);
      check_array(a, 2, foo, bar);
 
-     a->insert(a, 1, foo2);
+     a->insert(a, 1, &foo2);
      check_array(a, 3, foo, foo2, bar);
 
-     val = a->update(a, 1, bar2);
-     assert(val == foo2);
+     val = a->update(a, 1, &bar2);
+     assert(*val == bar2);
      check_array(a, 3, foo, bar2, bar);
 
-     a->insert(a, 5, foo2);
+     a->insert(a, 5, &foo2);
      check_array(a, 6, foo, bar2, bar, NULL, NULL, foo2);
 
      val = a->del(a, 1);
-     assert(val == bar2);
+     assert(*val == bar);
      check_array(a, 5, foo, bar, NULL, NULL, foo2);
 
      a->sort(a, compare);

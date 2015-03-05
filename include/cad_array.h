@@ -62,7 +62,7 @@ typedef unsigned int (*cad_array_count_fn) (cad_array_t *this);
  * @param[in] this the target array
  * @param[in] index the index to lookup
  *
- * @return the `index`-th value, `NULL` if out of bounds.
+ * @return the pointer to the `index`-th value, `NULL` if out of bounds.
  *
  */
 typedef void *(*cad_array_get_fn) (cad_array_t *this, unsigned int index);
@@ -74,8 +74,10 @@ typedef void *(*cad_array_get_fn) (cad_array_t *this, unsigned int index);
  * @param[in] index the index of the value to set
  * @param[in] value the value
  *
+ * @return the pointer to the inserted value
+ *
  */
-typedef void (*cad_array_insert_fn) (cad_array_t *this, unsigned int index, void *value);
+typedef void *(*cad_array_insert_fn) (cad_array_t *this, unsigned int index, void *value);
 
 /**
  * Replaces the `index`-th `value`. Will expand the array as needed.
@@ -84,7 +86,7 @@ typedef void (*cad_array_insert_fn) (cad_array_t *this, unsigned int index, void
  * @param[in] index the index of the value to set
  * @param[in] value the value
  *
- * @return the previous value, or NULL
+ * @return the pointer to the updated value
  *
  */
 typedef void *(*cad_array_update_fn) (cad_array_t *this, unsigned int index, void *value);
@@ -95,7 +97,7 @@ typedef void *(*cad_array_update_fn) (cad_array_t *this, unsigned int index, voi
  * @param[in] this the target array
  * @param[in] index the index of the value to delete
  *
- * @return the previous value, or NULL
+ * @return the pointer to the deleted value, `NULL` if out of bounds.
  *
  */
 typedef void *(*cad_array_del_fn) (cad_array_t *this, unsigned int index);
@@ -152,7 +154,7 @@ struct cad_array_s {
  *
  * @return the newly allocated array.
  */
-__PUBLIC__ cad_array_t *cad_new_array(cad_memory_t memory);
+__PUBLIC__ cad_array_t *cad_new_array(cad_memory_t memory, size_t size);
 
 /**
  * @}

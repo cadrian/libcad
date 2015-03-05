@@ -32,8 +32,9 @@ struct cad_array_impl {
 
      int capacity;
      int count;
+     int eltsize;
 
-     void **content;
+     void *content;
 };
 
 static void free_(struct cad_array_impl *this) {
@@ -47,7 +48,7 @@ static unsigned int count(struct cad_array_impl *this) {
 static void *get(struct cad_array_impl *this, unsigned int index) {
      void *result = NULL;
      if (index < this->count) {
-          result = this->content[index];
+          result = this->content + index * this->eltsize;
      }
      return result;
 }
@@ -56,26 +57,31 @@ static void grow(struct cad_array_impl *this, int grow_factor) {
      int new_capacity;
      if (this->capacity == 0) {
           new_capacity = grow_factor * grow_factor;
-          this->content = (void**)this->memory.malloc(new_capacity * sizeof(void*));
+          this->content = this->memory.malloc(new_capacity * this->eltsize);
+          memset(this->content, 0, new_capacity * this->eltsize);
      } else {
           new_capacity = this->capacity * grow_factor;
-          this->content = (void**)this->memory.realloc(this->content, new_capacity * sizeof(void*));
+          this->content = this->memory.realloc(this->content, new_capacity * this->eltsize);
+          memset(this->content + this->count * this->eltsize, 0, this->count * this->eltsize);
      }
      this->capacity = new_capacity;
 }
 
-static void insert(struct cad_array_impl *this, unsigned int index, void *value) {
+static void *insert(struct cad_array_impl *this, unsigned int index, void *value) {
+     void *result;
      if (this->count == this->capacity) {
           grow(this, 2);
      }
      while (index >= this->capacity) {
           grow(this, 2);
      }
+     result = this->content + index * this->eltsize;
      if (index < this->count) {
-          bcopy(this->content + index, this->content + index + 1, (this->count - index) * sizeof(void*));
+          bcopy(result, result + this->eltsize, (this->count - index) * this->eltsize);
      }
-     this->content[index] = value;
+     memcpy(result, value, this->eltsize);
      this->count = index < this->count ? this->count + 1 : index + 1;
+     return result;
 }
 
 static void *update(struct cad_array_impl *this, unsigned int index, void *value) {
@@ -83,8 +89,8 @@ static void *update(struct cad_array_impl *this, unsigned int index, void *value
      while (index >= this->capacity) {
           grow(this, 2);
      }
-     result = this->content[index];
-     this->content[index] = value;
+     result = this->content + index * this->eltsize;
+     memcpy(result, value, this->eltsize);
      this->count = index < this->count ? this->count : index + 1;
      return result;
 }
@@ -92,19 +98,18 @@ static void *update(struct cad_array_impl *this, unsigned int index, void *value
 static void *del(struct cad_array_impl *this, unsigned int index) {
      void *result = NULL;
      if (index < this->count) {
-          result = this->content[index];
+          result = this->content + index * this->eltsize;
           this->count--;
           if (this->count > index) {
-               bcopy(this->content + index + 1, this->content + index, (this->count - index) * sizeof(void*));
-          } else {
-               this->content[index] = NULL;
+               bcopy(result + this->eltsize, result, (this->count - index) * this->eltsize);
+               memset(this->content + (this->count + 1) * this->eltsize, 0, this->eltsize);
           }
      }
      return result;
 }
 
 static void sort(struct cad_array_impl *this, comparator_fn comparator) {
-     qsort(this->content, this->count, sizeof(void*), comparator);
+     qsort(this->content, this->count, this->eltsize, comparator);
 }
 
 static cad_array_t fn = {
@@ -117,7 +122,7 @@ static cad_array_t fn = {
      (cad_array_sort_fn   )sort   ,
 };
 
-__PUBLIC__ cad_array_t *cad_new_array(cad_memory_t memory) {
+__PUBLIC__ cad_array_t *cad_new_array(cad_memory_t memory, size_t size) {
      struct cad_array_impl *result = (struct cad_array_impl *)memory.malloc(sizeof(struct cad_array_impl));
      if (!result) return NULL;
      result->fn      = fn;
@@ -125,5 +130,6 @@ __PUBLIC__ cad_array_t *cad_new_array(cad_memory_t memory) {
      result->capacity= 0;
      result->count   = 0;
      result->content = NULL;
+     result->eltsize = size;
      return (cad_array_t*)result;
 }
