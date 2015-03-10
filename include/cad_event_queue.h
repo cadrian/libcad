@@ -54,6 +54,15 @@ typedef struct cad_event_queue_s cad_event_queue_t;
 typedef void *(*provide_data_fn)(void *data);
 
 /**
+ * The user may use functions of this type that will be executed in a
+ * critical section i.e. never at the same time than the provider.
+ *
+ * @param[in] data a payload data given at synchronize call
+ *
+ */
+typedef void (*synchronized_data_fn)(void *data);
+
+/**
  * Gets the file descriptor used by this event queue. Useful for select(2).
  *
  * @param[in] this the target event queue
@@ -84,6 +93,16 @@ typedef int (*cad_event_queue_is_running_fn)(cad_event_queue_t *this);
 typedef void *(*cad_event_queue_pull_fn)(cad_event_queue_t *this);
 
 /**
+ * Call the `synchronized` function with the given `data` in a critical section that is guaranteed
+ * never to run at the same time as the provider.
+ *
+ * @param[in] this the target event queue
+ * @param[in] synchronized the function to call
+ * @param[in] data the data to provided to the `synchronized` function
+ */
+typedef void (*cad_event_queue_synchronized_fn)(cad_event_queue_t *this, synchronized_data_fn synchronized, void *data);
+
+/**
  * Starts the queue.
  *
  * @param[in] this the target event queue
@@ -112,30 +131,34 @@ typedef void (*cad_event_queue_stop_fn)(cad_event_queue_t *this);
 typedef void (*cad_event_queue_free_fn)(cad_event_queue_t *this);
 
 struct cad_event_queue_s {
-   /**
-    * @see cad_event_queue_get_fd_fn
-    */
-   cad_event_queue_get_fd_fn     get_fd;
-   /**
-    * @see cad_event_queue_is_running_fn
-    */
-   cad_event_queue_is_running_fn is_running;
-   /**
-    * @see cad_event_queue_pull_fn
-    */
-   cad_event_queue_pull_fn       pull;
-   /**
-    * @see cad_event_queue_start_fn
-    */
-   cad_event_queue_start_fn      start;
-   /**
-    * @see cad_event_queue_stop_fn
-    */
-   cad_event_queue_stop_fn       stop;
-   /**
-    * @see cad_event_queue_free_fn
-    */
-   cad_event_queue_free_fn       free;
+     /**
+      * @see cad_event_queue_get_fd_fn
+      */
+     cad_event_queue_get_fd_fn     get_fd;
+     /**
+      * @see cad_event_queue_is_running_fn
+      */
+     cad_event_queue_is_running_fn is_running;
+     /**
+      * @see cad_event_queue_pull_fn
+      */
+     cad_event_queue_pull_fn       pull;
+     /**
+      * @see cad_event_queue_synchronized_fn
+      */
+     cad_event_queue_synchronized_fn synchronized;
+     /**
+      * @see cad_event_queue_start_fn
+      */
+     cad_event_queue_start_fn      start;
+     /**
+      * @see cad_event_queue_stop_fn
+      */
+     cad_event_queue_stop_fn       stop;
+     /**
+      * @see cad_event_queue_free_fn
+      */
+     cad_event_queue_free_fn       free;
 };
 
 /**
