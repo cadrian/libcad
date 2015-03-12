@@ -44,6 +44,9 @@ install: target/version
 	-test -e gendoc.sh && cp Makefile release.sh gendoc.sh debian/tmp/usr/share/$(PROJECT)/ # libcad specific
 	env | sort
 
+override_dh_strip:
+	dh_strip --dbg-package=$(shell awk '/^Package: .*-dbg$/ {print $2}' build/debian.main/control)
+
 release.main: target/dpkg/release.main release.doc
 
 target/dpkg/release.main: run-test lib target/version
@@ -172,7 +175,7 @@ target/out/%.po: src/%.c include/*.h
 target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
 	@echo "Compiling test: $<"
 	mkdir -p target/out
-	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -Werror -L $(BUILD_DIR)/target -I $(BUILD_DIR)/include -o $@ $< $(LINK_LIBS) $(PROJECT:lib%=-l%)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -Werror -L $(BUILD_DIR)/target -I $(BUILD_DIR)/include $(LDFLAGS) -o $@ $< $(PROJECT:lib%=-l%) $(LINK_LIBS)
 
 .PHONY: all lib doc clean run-test release.main release.doc
 #.SILENT:

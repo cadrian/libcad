@@ -27,6 +27,15 @@ Description: Cad's Addenda... by Cyril Adrian (aka Cad)
  .
  The main library.
 
+Package: libcad0-dbg
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Cad's Addenda... by Cyril Adrian (aka Cad)
+ A collection of useful tools, in an object-oriented fashion.
+ .
+ The debugging symbols.
+
 Package: libcad-doc
 Section: doc
 Architecture: all
