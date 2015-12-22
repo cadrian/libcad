@@ -69,3 +69,25 @@ Event queues can be waited upon using event loops.
 \defgroup cad_events Asynchronous event loops
 
 Event loops are asynchronous event handlers.
+
+
+\defgroup cad_stream Byte streams
+
+The library proposes a general-purpose interface and several
+implementations of input and output streams.
+\{
+
+\defgroup cad_in_stream Input streams
+
+Input streams act as byte cursors: their state is the current byte,
+change it by reading yet another byte.
+\{
+\}
+
+\defgroup cad_out_stream Output streams
+
+Output streams act as byte buckets: fill them and flush them.
+\{
+\}
+
+\}
