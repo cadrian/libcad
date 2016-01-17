@@ -81,16 +81,16 @@ static void free_output(struct cad_input_stream_string *this) {
      this->memory.free(this);
 }
 
-static void put(struct cad_output_stream_string *this, const char *format, ...) {
+static void vput(struct cad_output_stream_string *this, const char *format, va_list args) {
      int c;
      int new_capacity = this->capacity;
      char *string = *(this->string);
      char *new_string = string;
-     va_list args;
+     va_list args0;
 
-     va_start(args, format);
-     c = vsnprintf("", 0, format, args) + 1;
-     va_end(args);
+     va_copy(args0, args);
+     c = vsnprintf("", 0, format, args0) + 1;
+     va_end(args0);
 
      if (new_capacity == 0) {
           new_capacity = 128;
@@ -107,8 +107,13 @@ static void put(struct cad_output_stream_string *this, const char *format, ...) 
           this->capacity = new_capacity;
      }
 
-     va_start(args, format);
      this->count += vsprintf(new_string + this->count, format, args);
+}
+
+static void put(struct cad_output_stream_string *this, const char *format, ...) {
+     va_list args;
+     va_start(args, format);
+     vput(this, format, args);
      va_end(args);
 }
 
@@ -119,6 +124,7 @@ static void flush(struct cad_output_stream_string *this) {
 static cad_output_stream_t output_fn = {
      (cad_output_stream_free_fn )free_output,
      (cad_output_stream_put_fn  )put        ,
+     (cad_output_stream_vput_fn )vput       ,
      (cad_output_stream_flush_fn)flush      ,
 };
 

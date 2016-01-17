@@ -99,12 +99,12 @@ static void free_output(struct cad_input_stream_file_descriptor *this) {
      this->memory.free(this);
 }
 
-static void put(struct cad_output_stream_file_descriptor *this, const char *format, ...) {
-     va_list args;
+static void vput(struct cad_output_stream_file_descriptor *this, const char *format, va_list args) {
+     va_list args0;
      int i, n, m;
-     va_start(args, format);
-     n = vsnprintf(this->buffer, this->capacity, format, args);
-     va_end(args);
+     va_copy(args0, args);
+     n = vsnprintf(this->buffer, this->capacity, format, args0);
+     va_end(args0);
 
      if (n >= this->capacity) {
           this->memory.free(this->buffer);
@@ -113,9 +113,7 @@ static void put(struct cad_output_stream_file_descriptor *this, const char *form
           } while (n >= this->capacity);
           this->buffer = this->memory.malloc(this->capacity);
 
-          va_start(args, format);
           n = vsnprintf(this->buffer, this->capacity, format, args);
-          va_end(args);
      }
 
      while (m < n) {
@@ -128,6 +126,13 @@ static void put(struct cad_output_stream_file_descriptor *this, const char *form
      }
 }
 
+static void put(struct cad_output_stream_file_descriptor *this, const char *format, ...) {
+     va_list args;
+     va_start(args, format);
+     vput(this, format, args);
+     va_end(args);
+}
+
 static void flush(struct cad_output_stream_file_descriptor *this) {
      fsync(this->fd);
 }
@@ -135,6 +140,7 @@ static void flush(struct cad_output_stream_file_descriptor *this) {
 static cad_output_stream_t output_fn = {
      (cad_output_stream_free_fn )free_output,
      (cad_output_stream_put_fn  )put        ,
+     (cad_output_stream_vput_fn )vput       ,
      (cad_output_stream_flush_fn)flush      ,
 };
 
