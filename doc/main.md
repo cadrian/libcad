@@ -91,3 +91,10 @@ Output streams act as byte buckets: fill them and flush them.
 \}
 
 \}
+
+\defgroup cad_stache Mustache implementation
+
+The Mustache implementation is an implementation of the well-known
+template engine. See http://mustache.github.io/ for more details.
+\{
+\}

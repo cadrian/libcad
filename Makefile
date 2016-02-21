@@ -30,11 +30,12 @@ all: run-test lib doc
 endif
 	@echo
 
-install: target/version
+install: target/version lib doc
 	mkdir -p debian/tmp/usr/lib
 	mkdir -p debian/tmp/usr/include
 	mkdir -p debian/tmp/usr/share/$(PROJECT)
 	mkdir -p debian/tmp/usr/share/doc/$(PROJECT)-doc
+	strip --strip-unneeded target/$(SOBJ)
 	-cp target/$(SOBJ) debian/tmp/usr/lib/$(SOBJ).$(shell cat target/version)
 	-ln -sf $(SOBJ).$(shell cat target/version) debian/tmp/usr/lib/$(SOBJ).0
 	-ln -sf $(SOBJ).$(shell cat target/version) debian/tmp/usr/lib/$(SOBJ)
@@ -83,7 +84,6 @@ ifeq "$(wildcard /etc/setup/setup.rc)" ""
 target/$(SOBJ): $(PIC_OBJ)
 	@echo "Linking shared library: $@"
 	$(CC) -shared $(PICFLAG) -Wl,-z,defs,-soname=$(PROJECT).so.0 $(LDFLAGS) -o $@ $(PIC_OBJ) -Wall -Werror $(LINK_LIBS)
-	strip --strip-unneeded $@
 	@echo
 else
 target/$(SOBJ): $(PIC_OBJ)
@@ -94,7 +94,6 @@ target/$(SOBJ): $(PIC_OBJ)
 		-Wl,--enable-auto-import \
 		-Wl,--whole-archive $(PIC_OBJ) \
 		-Wl,--no-whole-archive $(LDFLAGS) $(LINK_LIBS)
-	strip --strip-unneeded $@
 	@echo
 endif
 
@@ -172,7 +171,7 @@ target/out/%.po: src/%.c include/*.h
 	mkdir -p target/out
 	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -Werror $(PICFLAG) -fvisibility=hidden -I $(BUILD_DIR)/include -c $< -o $@
 
-target/out/%.exe: test/%.c test/*.h target/$(PROJECT).so
+target/out/%.exe: test/%.c test/*.h target/$(SOBJ).0
 	@echo "Compiling test: $<"
 	mkdir -p target/out
 	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -Werror -L $(BUILD_DIR)/target -I $(BUILD_DIR)/include $(LDFLAGS) -o $@ $< $(PROJECT:lib%=-l%) $(LINK_LIBS)
