@@ -38,6 +38,7 @@ struct cad_array_impl {
 };
 
 static void free_(struct cad_array_impl *this) {
+     this->memory.free(this->content);
      this->memory.free(this);
 }
 
