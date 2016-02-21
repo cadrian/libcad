@@ -39,10 +39,13 @@ static void free_input(struct cad_input_stream_string *this) {
 }
 
 static int next(struct cad_input_stream_string *this) {
+     int result = 0;
      if (this->string[this->index]) {
           this->index++;
+     } else {
+          result = -1;
      }
-     return 0;
+     return result;
 }
 
 static int item(struct cad_input_stream_string *this) {
@@ -77,7 +80,7 @@ struct cad_output_stream_string {
      int count;
 };
 
-static void free_output(struct cad_input_stream_string *this) {
+static void free_output(struct cad_output_stream_string *this) {
      this->memory.free(this);
 }
 
