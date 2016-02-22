@@ -53,6 +53,13 @@ struct loop {
    int empty;
 };
 
+struct partial {
+   cad_stache_lookup_type lookup_type;
+   cad_stache_resolved_t *resolved;
+   cad_input_stream_t *stream;
+   char save;
+};
+
 struct buffer {
    cad_memory_t memory;
    cad_input_stream_t *input;
@@ -61,6 +68,7 @@ struct buffer {
    int fill;
    int capacity;
    int eof;
+   cad_array_t *partials;
    cad_array_t *loops;
    const char *error;
 };
@@ -71,7 +79,6 @@ static void free_(struct cad_stache_impl *this) {
 
 static int buffer_next(struct buffer *buffer) {
    int result = 1;
-   if (buffer->index > 200) {int*i=0;*i=0;}
 
    if (!buffer->eof) {
       buffer->index++;
@@ -80,15 +87,50 @@ static int buffer_next(struct buffer *buffer) {
             buffer->capacity = buffer->capacity * 2;
             buffer->data = buffer->memory.realloc(buffer->data, buffer->capacity);
          }
-         int c = buffer->input->item(buffer->input);
+         int np = buffer->partials->count(buffer->partials);
+
+         cad_input_stream_t *input;
+         struct partial *partial;
+         if (np > 0) {
+            partial = buffer->partials->get(buffer->partials, np - 1);
+            input = partial->stream;
+         } else {
+            input = buffer->input;
+         }
+
+         int c = input->item(input);
          if (c == -1) {
-            buffer->eof = 1;
+            if (np > 0) {
+               switch(partial->lookup_type) {
+               case Cad_stache_not_found:
+               case Cad_stache_list:
+                  buffer->error = "BUG unexpected type";
+                  break;
+               case Cad_stache_string:
+                  c = partial->save;
+                  input->free(input);
+                  partial->resolved->string.free(partial->resolved);
+                  break;
+               case Cad_stache_partial:
+                  c = partial->save;
+                  // don't free() input, the contract is that the
+                  // implementation of a partial free() should take
+                  // care of it (we don't own the stream)
+                  partial->resolved->partial.free(partial->resolved);
+                  break;
+               }
+               buffer->partials->del(buffer->partials, --np);
+               buffer->data[buffer->fill++] = c;
+            } else {
+               buffer->eof = 1;
+            }
          } else {
             buffer->data[buffer->fill++] = c;
-            if (buffer->input->next(buffer->input)) {
+            if (input->next(input)) {
                buffer->eof = 1;
             }
          }
+
       } else {
          // OK, already filled
       }
@@ -104,8 +146,7 @@ static int buffer_eof(struct buffer *buffer) {
 }
 
 static char buffer_item(struct buffer *buffer) {
-   char result = buffer->data[buffer->index];
-   return result;
+   return buffer->data[buffer->index];
 }
 
 static int buffer_look_at(struct buffer *buffer, const char *expected) {
@@ -240,6 +281,10 @@ static int render_stache_raw(struct cad_stache_impl *this, struct buffer *buffer
             buffer->error = "unexpected list";
             result = 0;
             break;
+         case Cad_stache_partial:
+            buffer->error = "unexpected partial";
+            result = 0;
+            break;
          default:
             buffer->error = "invalid type";
             result = 0;
@@ -300,6 +345,10 @@ static int render_stache_escape(struct cad_stache_impl *this, struct buffer *buf
             buffer->error = "unexpected list";
             result = 0;
             break;
+         case Cad_stache_partial:
+            buffer->error = "unexpected partial";
+            result = 0;
+            break;
          default:
             buffer->error = "invalid type";
             result = 0;
@@ -318,6 +367,7 @@ static int render_stache_loop(struct cad_stache_impl *this, struct buffer *buffe
       cad_stache_resolved_t *resolved;
       cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, &resolved);
       const char *c;
+      cad_input_stream_t *s;
       struct loop loop = { loop_type, name, type, NULL, buffer->index, 0, 0 };
       switch(type) {
       case Cad_stache_not_found:
@@ -334,6 +384,23 @@ static int render_stache_loop(struct cad_stache_impl *this, struct buffer *buffe
       case Cad_stache_list:
          loop.resolved = resolved;
          loop.empty = (resolved->list.get(resolved, 0) == 0);
+         break;
+      case Cad_stache_partial:
+         s = resolved->partial.get(resolved);
+         if (s == NULL) {
+            loop.empty = 1;
+         } else if (s->next(s)) {
+            buffer->error = "error while reading partial";
+            result = 0;
+         } else if (s->item(s) == -1) {
+            loop.empty = 1;
+         } else {
+            loop.empty = 0;
+         }
+         if (!resolved->partial.free(resolved)) {
+            buffer->error = "could not free partial";
+            result = 0;
+         }
          break;
       default:
          buffer->error = "invalid type";
@@ -373,6 +440,7 @@ static int render_stache_end(struct cad_stache_impl *this, struct buffer *buffer
                this->memory.free(loop->name);
                break;
             case Cad_stache_string:
+            case Cad_stache_partial:
                buffer->loops->del(buffer->loops, buffer->loops->count(buffer->loops) - 1);
                this->memory.free(loop->name);
                break;
@@ -474,12 +542,61 @@ static int render_stache_comment(struct cad_stache_impl *this, struct buffer *bu
    return result;
 }
 
-static int render_stache_partial(struct cad_stache_impl *this, struct buffer *buffer, cad_output_stream_t *output) {
-   buffer->error = "partials are not implemented";
-   return 0;
+static int render_stache_partial(struct cad_stache_impl *this, struct buffer *buffer, cad_output_stream_t *output, int start_index) {
+   int result = 1;
+   char *name = parse_name(this, NULL, buffer);
+   if (name != NULL) {
+      cad_stache_resolved_t *resolved;
+      cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, &resolved);
+      const char *c;
+      struct partial partial = { type, resolved, NULL, '\0' };
+      switch(type) {
+      case Cad_stache_not_found:
+         // OK, empty partial
+         break;
+      case Cad_stache_string:
+         c = resolved->string.get(resolved);
+         if (c != NULL) {
+            partial.stream = new_cad_input_stream_from_string(c, this->memory);
+         } else {
+            resolved->string.free(resolved);
+         }
+         break;
+      case Cad_stache_list:
+         buffer->error = "unexpected list for partial";
+         result = 0;
+         resolved->list.close(resolved);
+         break;
+      case Cad_stache_partial:
+         partial.stream = resolved->partial.get(resolved);
+         if (partial.stream == NULL) {
+            resolved->partial.free(resolved);
+         }
+         break;
+      }
+      if (partial.stream != NULL) {
+         partial.save = buffer_item(buffer);
+         buffer->partials->insert(buffer->partials, buffer->partials->count(buffer->partials), &partial);
+      }
+
+      /*
+       * In all cases, we must remove the {{>...}} from the buffer
+       * otherwise the result is incorrect, esp. when looping.
+       *
+       * By design, this happens only when first reading the buffer
+       * even in a loop.
+       */
+      buffer->index = start_index - 1;
+      buffer->fill = start_index;
+      if (!buffer_next(buffer)) {
+         buffer->error = "BUG: no next at partial start";
+         result = 0;
+      }
+   }
+   return result;
 }
 
-static int render_stache(struct cad_stache_impl *this, struct buffer *buffer, cad_output_stream_t *output) {
+static int render_stache(struct cad_stache_impl *this, struct buffer *buffer, cad_output_stream_t *output, int start_index) {
    int result = 1;
    if (buffer_eof(buffer)) {
       buffer->error = "Invalid 'stache: nothing found after 'stache opening";
@@ -510,7 +627,7 @@ static int render_stache(struct cad_stache_impl *this, struct buffer *buffer, ca
             result = render_stache_comment(this, buffer);
             break;
          case '>':
-            result = render_stache_partial(this, buffer, output);
+            result = render_stache_partial(this, buffer, output, start_index);
             break;
          default:
             buffer->index--;
@@ -524,8 +641,9 @@ static int render_stache(struct cad_stache_impl *this, struct buffer *buffer, ca
 static int render_template(struct cad_stache_impl *this, struct buffer *buffer, cad_output_stream_t *output) {
    int result = 1;
    while (result && !buffer_eof(buffer)) {
+      int index = buffer->index;
       if (buffer_look_at(buffer, this->open)) {
-         result = render_stache(this, buffer, output);
+         result = render_stache(this, buffer, output, index);
       } else {
          char c = buffer_item(buffer);
          buffer_output(buffer, output, "%c", c);
@@ -543,7 +661,16 @@ static int render(struct cad_stache_impl *this, cad_input_stream_t *input, cad_o
    sprintf(this->close, "%s", "}}");
 
    struct buffer buffer = {
-      this->memory, input, this->memory.malloc(4096), -1, 0, 4096, 0, cad_new_array(this->memory, sizeof(struct loop)), ""
+      .memory   = this->memory,
+      .input    = input,
+      .data     = this->memory.malloc(4096),
+      .index    =   -1,
+      .fill     =    0,
+      .capacity = 4096,
+      .eof      = 0,
+      .partials = cad_new_array(this->memory, sizeof(struct partial)),
+      .loops    = cad_new_array(this->memory, sizeof(struct loop)),
+      .error    = "",
    };
 
    if (buffer_next(&buffer)) {

@@ -20,8 +20,9 @@
 #include "cad_stache.h"
 #include "cad_stream.h"
 
-#define TEMPLATE "<html><head><title>{{{title}}}</title></head><body><h1>{{title}}</h1><ul>{{#list}}<li>{{data}}</li>{{/list}}{{^list}}<li>NO DATA</li>{{/list}}</ul></body></html>"
-#define EXPECTED_RESULT "<html><head><title>Test 'stache</title></head><body><h1>Test &apos;stache</h1><ul><li>foo</li><li>bar</li></ul></body></html>"
+#define EXTRA_TEMPLATE "<p>That was {{title}}.</p>"
+#define TEMPLATE "<html><head><title>{{{title}}}</title></head><body><h1>{{title}}</h1><ul>{{#list}}<li>{{data}}</li>{{/list}}{{^list}}<li>NO DATA</li>{{/list}}</ul>{{>extra}}</body></html>"
+#define EXPECTED_RESULT "<html><head><title>Test 'stache</title></head><body><h1>Test &apos;stache</h1><ul><li>foo</li><li>bar</li></ul><p>That was Test &apos;stache.</p></body></html>"
 
 static const char *error_message = NULL;
 static int error_index = 0;
@@ -121,6 +122,23 @@ static int close_list(cad_stache_resolved_t *this) {
    return 1;
 }
 
+static const char *get_extra(cad_stache_resolved_t *this);
+static int free_extra(cad_stache_resolved_t *this);
+static cad_stache_resolved_t extra = {
+   .string = {
+      .get = get_extra,
+      .free = free_extra,
+   },
+};
+static const char *get_extra(cad_stache_resolved_t *this) {
+   assert(this == &extra);
+   return EXTRA_TEMPLATE;
+}
+static int free_extra(cad_stache_resolved_t *this) {
+   assert(this == &extra);
+   return 1;
+}
+
 static cad_stache_lookup_type stache_callback(cad_stache_t *stache, const char *name, cad_stache_resolved_t **resolved) {
    cad_stache_lookup_type result = Cad_stache_not_found;
 
@@ -140,6 +158,9 @@ static cad_stache_lookup_type stache_callback(cad_stache_t *stache, const char *
          result = Cad_stache_string;
          *resolved = data;
       }
+   } else if (!strcmp(name, "extra")) {
+      result = Cad_stache_string;
+      *resolved = &extra;
    } else {
       printf("INVALID NAME: %s\n", name);
       assert(0 /* invalid name */);

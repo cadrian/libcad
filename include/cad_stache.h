@@ -38,6 +38,7 @@ typedef enum {
    Cad_stache_not_found = 0,
    Cad_stache_string,
    Cad_stache_list,
+   Cad_stache_partial,
 } cad_stache_lookup_type;
 
 typedef union cad_stache_resolved cad_stache_resolved_t;
@@ -66,10 +67,27 @@ union cad_stache_resolved {
       int (*get)(cad_stache_resolved_t *this, int index);
       /**
        * must return non-zero on success; the engine will not use the
-       * object after this call, it may be freed
+       * object after this call, it may be freed.
        */
       int (*close)(cad_stache_resolved_t *this);
    } list;
+   /**
+    * for {@ref Cad_stache_partial}
+    */
+   struct {
+      /**
+       * must return NULL if not found, a stream otherwise
+       */
+      cad_input_stream_t *(*get)(cad_stache_resolved_t *this);
+      /**
+       * must return non-zero on success; the engine will not use the
+       * object after this call, it may be freed.
+       *
+       * NOTE: this function is also in charge of freeing the input
+       * stream returned by get()
+       */
+      int (*free)(cad_stache_resolved_t *this);
+   } partial;
 };
 
 /**
