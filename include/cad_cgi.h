@@ -17,10 +17,12 @@
 #ifndef _CAD_CGI_H_
 #define _CAD_CGI_H_
 
+#include "cad_hash.h"
 #include "cad_shared.h"
 #include "cad_stream.h"
 
 typedef struct cad_cgi cad_cgi_t;
+typedef struct cad_cgi_meta cad_cgi_meta_t;
 typedef struct cad_cgi_response cad_cgi_response_t;
 typedef struct cad_cgi_cookies cad_cgi_cookies_t;
 typedef struct cad_cgi_cookie cad_cgi_cookie_t;
@@ -55,9 +57,133 @@ typedef int (*cad_cgi_run_fn)(cad_cgi_t *this);
 typedef int (*cad_cgi_fd_fn)(cad_cgi_t *this);
 
 struct cad_cgi {
+   /**
+    * @see cad_cgi_free_fn
+    */
    cad_cgi_free_fn free;
+   /**
+    * @see cad_cgi_run_fn
+    */
    cad_cgi_run_fn run;
+   /**
+    * @see cad_cgi_fd_fn
+    */
    cad_cgi_fd_fn fd;
+};
+
+/* ---------------------------------------------------------------- */
+
+typedef enum {
+   Auth_invalid = -1,
+   Auth_none = 0,
+   Auth_basic,
+   Auth_digest,
+} cad_cgi_auth_type_e;
+
+typedef struct {
+   int major;
+   int minor;
+} cad_cgi_gateway_interface_t;
+
+typedef struct {
+   int major;
+   int minor;
+   const char *protocol;
+} cad_cgi_server_protocol_t;
+
+typedef struct {
+   const char *type;
+   const char *subtype;
+   cad_hash_t *parameters;
+} cad_cgi_content_type_t;
+
+typedef cad_cgi_auth_type_e (*cad_cgi_meta_auth_type_fn)(cad_cgi_meta_t *this);
+typedef size_t (*cad_cgi_meta_content_length_fn)(cad_cgi_meta_t *this);
+typedef cad_cgi_content_type_t *(*cad_cgi_meta_content_type_fn)(cad_cgi_meta_t *this);
+typedef cad_cgi_gateway_interface_t *(*cad_cgi_meta_gateway_interface_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_path_info_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_path_translated_fn)(cad_cgi_meta_t *this);
+typedef cad_hash_t *(*cad_cgi_meta_query_string_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_remote_addr_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_remote_host_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_remote_ident_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_remote_user_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_request_method_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_script_name_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_server_name_fn)(cad_cgi_meta_t *this);
+typedef int (*cad_cgi_meta_server_port_fn)(cad_cgi_meta_t *this);
+typedef cad_cgi_server_protocol_t *(*cad_cgi_meta_server_protocol_fn)(cad_cgi_meta_t *this);
+typedef const char *(*cad_cgi_meta_server_software_fn)(cad_cgi_meta_t *this);
+
+struct cad_cgi_meta {
+   /**
+    * @see cad_cgi_meta_auth_type_fn
+    */
+   cad_cgi_meta_auth_type_fn auth_type;
+   /**
+    * @see cad_cgi_meta_content_length_fn
+    */
+   cad_cgi_meta_content_length_fn content_length;
+   /**
+    * @see cad_cgi_meta_content_type_fn
+    */
+   cad_cgi_meta_content_type_fn content_type;
+   /**
+    * @see cad_cgi_meta_gateway_interface_fn
+    */
+   cad_cgi_meta_gateway_interface_fn gateway_interface;
+   /**
+    * @see cad_cgi_meta_path_info_fn
+    */
+   cad_cgi_meta_path_info_fn path_info;
+   /**
+    * @see cad_cgi_meta_path_translated_fn
+    */
+   cad_cgi_meta_path_translated_fn path_translated;
+   /**
+    * @see cad_cgi_meta_query_string_fn
+    */
+   cad_cgi_meta_query_string_fn query_string;
+   /**
+    * @see cad_cgi_meta_remote_addr_fn
+    */
+   cad_cgi_meta_remote_addr_fn remote_addr;
+   /**
+    * @see cad_cgi_meta_remote_host_fn
+    */
+   cad_cgi_meta_remote_host_fn remote_host;
+   /**
+    * @see cad_cgi_meta_remote_ident_fn
+    */
+   cad_cgi_meta_remote_ident_fn remote_ident;
+   /**
+    * @see cad_cgi_meta_remote_user_fn
+    */
+   cad_cgi_meta_remote_user_fn remote_user;
+   /**
+    * @see cad_cgi_meta_request_method_fn
+    */
+   cad_cgi_meta_request_method_fn request_method;
+   /**
+    * @see cad_cgi_meta_script_name_fn
+    */
+   cad_cgi_meta_script_name_fn script_name;
+   /**
+    * @see cad_cgi_meta_server_name_fn
+    */
+   cad_cgi_meta_server_name_fn server_name;
+   /**
+    * @see _cgi_meta_server_port_fn
+    */
+   cad_cgi_meta_server_port_fn server_port;
+   /**
+    * @see _cgi_meta_server_protocol_fn
+    */
+   cad_cgi_meta_server_protocol_fn server_protocol;
+   /**
+    * @see _cgi_meta_server_software
+    */
+   cad_cgi_meta_server_software_fn server_software;
 };
 
 /* ---------------------------------------------------------------- */
@@ -65,11 +191,20 @@ struct cad_cgi {
 /**
  * Get the CGI cookies
  *
- * @param[in] this the target CGI context
+ * @param[in] this the target CGI response
  *
  * @return the CGI cookies
  */
-typedef cad_cgi_cookies_t *(*cad_cgi_response_cookies_fn)(cad_cgi_t *this);
+typedef cad_cgi_cookies_t *(*cad_cgi_response_cookies_fn)(cad_cgi_response_t *this);
+
+/**
+ * Get the CGI meta variables
+ *
+ * @param[in] this the target CGI response
+ *
+ * @return the CGI meta variables
+ */
+typedef cad_cgi_meta_t *(*cad_cgi_response_meta_variables_fn)(cad_cgi_response_t *this);
 
 /**
  * Get the file descriptor of the output, needed for multiplexing
@@ -134,12 +269,37 @@ typedef int (*cad_cgi_response_set_content_type_fn)(cad_cgi_response_t *this, co
 typedef int (*cad_cgi_response_set_header_fn)(cad_cgi_response_t *this, const char *field, const char *value);
 
 struct cad_cgi_response {
+   /**
+    * @see cad_cgi_response_cookies_fn
+    */
    cad_cgi_response_cookies_fn cookies;
+   /**
+    * @see cad_cgi_response_meta_variables_fn
+    */
+   cad_cgi_response_meta_variables_fn meta_variables;
+   /**
+    * @see cad_cgi_response_fd_fn
+    */
    cad_cgi_response_fd_fn fd;
+   /**
+    * @see cad_cgi_response_body_fn
+    */
    cad_cgi_response_body_fn body;
+   /**
+    * @see cad_cgi_response_redirect_fn
+    */
    cad_cgi_response_redirect_fn redirect;
+   /**
+    * @see cad_cgi_response_set_status_fn
+    */
    cad_cgi_response_set_status_fn set_status;
+   /**
+    * @see cad_cgi_response_set_content_type_fn
+    */
    cad_cgi_response_set_content_type_fn set_content_type;
+   /**
+    * @see cad_cgi_response_set_header_fn
+    */
    cad_cgi_response_set_header_fn set_header;
 };
 
@@ -166,7 +326,13 @@ typedef cad_cgi_cookie_t *(*cad_cgi_cookies_get_fn)(cad_cgi_cookies_t *this, con
 typedef int (*cad_cgi_cookies_set_fn)(cad_cgi_cookies_t *this, cad_cgi_cookie_t *cookie);
 
 struct cad_cgi_cookies {
+   /**
+    * @see _cookies_get_fn
+    */
    cad_cgi_cookies_get_fn get;
+   /**
+    * @see cad_cgi_cookies_set_fn
+    */
    cad_cgi_cookies_set_fn set;
 };
 
@@ -309,19 +475,61 @@ typedef cad_cgi_cookie_flag_e (*cad_cgi_cookie_flag_fn)(cad_cgi_cookie_t *this);
 typedef int (*cad_cgi_cookie_set_flag_fn)(cad_cgi_cookie_t *this, cad_cgi_cookie_flag_e flag);
 
 typedef struct cad_cgi_cookie {
+   /**
+    * @see free_fn
+    */
    cad_cgi_cookie_free_fn free;
+   /**
+    * @see cad_cgi_cookie_name_fn
+    */
    cad_cgi_cookie_name_fn name;
+   /**
+    * @see cad_cgi_cookie_value_fn
+    */
    cad_cgi_cookie_value_fn value;
+   /**
+    * @see cad_cgi_cookie_set_value_fn
+    */
    cad_cgi_cookie_set_value_fn set_value;
+   /**
+    * @see cad_cgi_cookie_expires_fn
+    */
    cad_cgi_cookie_expires_fn expires;
+   /**
+    * @see cad_cgi_cookie_set_expires_fn
+    */
    cad_cgi_cookie_set_expires_fn set_expires;
+   /**
+    * @see cad_cgi_cookie_max_age_fn
+    */
    cad_cgi_cookie_max_age_fn max_age;
+   /**
+    * @see cad_cgi_cookie_set_max_age_fn
+    */
    cad_cgi_cookie_set_max_age_fn set_max_age;
+   /**
+    * @see cad_cgi_cookie_domain_fn
+    */
    cad_cgi_cookie_domain_fn domain;
+   /**
+    * @see cad_cgi_cookie_set_domain_fn
+    */
    cad_cgi_cookie_set_domain_fn set_domain;
+   /**
+    * @see cad_cgi_cookie_path_fn
+    */
    cad_cgi_cookie_path_fn path;
+   /**
+    * @see cad_cgi_cookie_set_path_fn
+    */
    cad_cgi_cookie_set_path_fn set_path;
+   /**
+    * @see cad_cgi_cookie_flag_fn
+    */
    cad_cgi_cookie_flag_fn flag;
+   /**
+    * @see cad_cgi_cookie_set_flag_fn
+    */
    cad_cgi_cookie_set_flag_fn set_flag;
 } cad_cgi_cookie_t;
 
@@ -333,12 +541,11 @@ typedef struct cad_cgi_cookie {
  * functions to prepare the response.
  *
  * @param[in] cgi the calling CGI context
- * @param[in] verb the HTTP verb: GET, POST, ...
  * @param[in] response the response to prepare
  *
  * @return 0 on success, anything else otherwise
  */
-typedef int (*cad_cgi_handle_cb)(cad_cgi_t *cgi, const char *verb, cad_cgi_response_t *response);
+typedef int (*cad_cgi_handle_cb)(cad_cgi_t *cgi, cad_cgi_response_t *response);
 
 /**
  * Creates a new CGI context using the provided handler.

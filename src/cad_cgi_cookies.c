@@ -26,7 +26,6 @@
 #include <time.h>
 
 #include "cad_cgi_internal.h"
-#include "cad_hash.h"
 
 /* ---------------------------------------------------------------- */
 
