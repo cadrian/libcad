@@ -2,7 +2,6 @@
 
 HOME=$(pwd)
 DIR=${TESTDIR:-$(mktemp --tmpdir -d test_cgi.XXXXXX)}
-echo DIR=$DIR
 
 CONF=$DIR/conf
 ROOT=$DIR/root
@@ -12,14 +11,13 @@ RUN=$DIR/run
 mkdir -p $CONF $ROOT $LOG $RUN
 
 cat > $CONF/lighttpd.conf <<EOF
-server.chroot = "$DIR"
-server.document-root = "root"
+server.document-root = "$ROOT"
 server.port = 8888
 server.tag = "test_cgi"
 server.modules = ("mod_cgi","mod_auth","mod_accesslog")
 
 auth.backend = "plain"
-auth.backend.plain.userfile = "conf/users"
+auth.backend.plain.userfile = "$CONF/users"
 auth.require = ( "/" => (
         "method" => "basic",
         "realm" => "Password protected area",
@@ -38,9 +36,9 @@ mimetype.assign = (
 static-file.exclude-extensions = ( ".fcgi", ".php", ".rb", "~", ".inc", ".cgi" )
 index-file.names = ( "index.html" )
 
-server.errorlog = "log/error.log"
-server.breakagelog = "log/breakage.log"
-accesslog.filename = "log/access.log"
+server.errorlog = "$LOG/error.log"
+server.breakagelog = "$LOG/breakage.log"
+accesslog.filename = "$LOG/access.log"
 
 \$HTTP["url"] =~ "^/test_cgi\.cgi" {
     cgi.assign = ( ".cgi" => "$(which bash)" )
@@ -84,10 +82,29 @@ EOF
 lighttpd_pid=$!
 
 sleep 2
-curl -m10 'http://test:pwd@localhost:8888/test_cgi.cgi?foo=bar'
+curl -m10 'http://test:pwd@localhost:8888/test_cgi.cgi?foo=bar' -o target/test/test_cgi.new
+cat target/test/test_cgi.new
 
 kill $lighttpd_pid
 
-cat $LOG/breakage.log
+echo '----------------------------------------------------------------'
+status=0
+if [ -r $LOG/breakage.log -a $(cat $LOG/breakage.log | wc -l) -lt 0 ]; then
+    status=1
+else
+    diff -u test/test_cgi.ref target/test/test_cgi.new
+    status=$?
+fi
+
+echo '----------------------------------------------------------------'
+for log in env access error breakage; do
+    test -r $LOG/$log.log && {
+        echo $log
+        cat $LOG/$log.log
+        echo '----------------------------------------------------------------'
+    }
+done
 
 rm -rf $DIR
+
+exit $status
