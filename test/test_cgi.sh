@@ -9,17 +9,17 @@ ROOT=$DIR/root
 LOG=$DIR/log
 RUN=$DIR/run
 
-mkdir -p $CONF/pwd $ROOT $LOG $RUN/pwd
+mkdir -p $CONF $ROOT $LOG $RUN
 
 cat > $CONF/lighttpd.conf <<EOF
 server.chroot = "$DIR"
-server.document-root = "$ROOT"
+server.document-root = "root"
 server.port = 8888
 server.tag = "test_cgi"
 server.modules = ("mod_cgi","mod_auth","mod_accesslog")
 
 auth.backend = "plain"
-auth.backend.plain.userfile = "$CONF/users"
+auth.backend.plain.userfile = "conf/users"
 auth.require = ( "/" => (
         "method" => "basic",
         "realm" => "Password protected area",
@@ -38,9 +38,9 @@ mimetype.assign = (
 static-file.exclude-extensions = ( ".fcgi", ".php", ".rb", "~", ".inc", ".cgi" )
 index-file.names = ( "index.html" )
 
-server.errorlog = "$LOG/error.log"
-server.breakagelog = "$LOG/breakage.log"
-accesslog.filename = "$LOG/access.log"
+server.errorlog = "log/error.log"
+server.breakagelog = "log/breakage.log"
+accesslog.filename = "log/access.log"
 
 \$HTTP["url"] =~ "^/test_cgi\.cgi" {
     cgi.assign = ( ".cgi" => "$(which bash)" )
@@ -77,12 +77,17 @@ export XDG_CONFIG_DIRS=$RUN
 exec $HOME/${0%.sh}.exe
 EOF
 
-cd $DIR
-
-/usr/sbin/lighttpd -D -f $CONF/lighttpd.conf &
+(
+    cd $DIR
+    exec /usr/sbin/lighttpd -D -f $CONF/lighttpd.conf
+) &
 lighttpd_pid=$!
 
 sleep 2
 curl -m10 'http://test:pwd@localhost:8888/test_cgi.cgi?foo=bar'
 
 kill $lighttpd_pid
+
+cat $LOG/breakage.log
+
+rm -rf $DIR
