@@ -4,6 +4,8 @@ libcad (0.0.3#SNAPSHOT#) unstable; urgency=low
   * Events selector using ppoll(2)
   * Added realloc() to memory, improved reallocation algorigthms
   * Added synchronized() to event queues
+  * Added a template engine: cad_stache
+  * Added a CGI handler
 
  -- Cyril ADRIAN <cyril.adrian@gmail.com>  #DATE#
 
