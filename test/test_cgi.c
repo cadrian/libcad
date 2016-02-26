@@ -59,8 +59,14 @@ int main(int argc, char **argv) {
       return 1;
    }
 
+   int result = 1;
    cad_cgi_t *cgi = new_cad_cgi(stdlib_memory, handler);
-   int result = cgi->run(cgi);
+   cad_cgi_response_t *response = cgi->run(cgi);
+   if (response != NULL) {
+      response->flush(response);
+      response->free(response);
+      result = 0;
+   }
    cgi->free(cgi);
 
    return result;

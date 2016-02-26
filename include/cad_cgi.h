@@ -37,14 +37,14 @@ typedef struct cad_cgi_cookie cad_cgi_cookie_t;
 typedef void (*cad_cgi_free_fn)(cad_cgi_t *this);
 
 /**
- * Run the CGI script, by reading the CGI input and calling the handler.
+ * Runs the CGI script, by reading the CGI input and calling the handler.
  * Usually called only once.
  *
  * @param[in] this the target CGI context
  *
- * @return 0 on success, -1 on error
+ * @return the response to flush on success, NULL on error
  */
-typedef int (*cad_cgi_run_fn)(cad_cgi_t *this);
+typedef cad_cgi_response_t *(*cad_cgi_run_fn)(cad_cgi_t *this);
 
 /**
  * Get the file descriptor of the input, needed for multiplexing
@@ -207,6 +207,15 @@ typedef cad_cgi_cookies_t *(*cad_cgi_response_cookies_fn)(cad_cgi_response_t *th
 typedef cad_cgi_meta_t *(*cad_cgi_response_meta_variables_fn)(cad_cgi_response_t *this);
 
 /**
+ * Flush the response
+ *
+ * @param[in] this the target CGI response
+ *
+ * @return 0 on success, -1 on error
+ */
+typedef int (*cad_cgi_response_flush_fn)(cad_cgi_response_t *this);
+
+/**
  * Get the file descriptor of the output, needed for multiplexing
  * (e.g. libuv...)
  *
@@ -268,6 +277,15 @@ typedef int (*cad_cgi_response_set_content_type_fn)(cad_cgi_response_t *this, co
  */
 typedef int (*cad_cgi_response_set_header_fn)(cad_cgi_response_t *this, const char *field, const char *value);
 
+/**
+ * Free the response
+ *
+ * @param[in] this the target CGI response
+ *
+ * @return 0 on success, -1 on error
+ */
+typedef int (*cad_cgi_response_free_fn)(cad_cgi_response_t *this);
+
 struct cad_cgi_response {
    /**
     * @see cad_cgi_response_cookies_fn
@@ -277,6 +295,10 @@ struct cad_cgi_response {
     * @see cad_cgi_response_meta_variables_fn
     */
    cad_cgi_response_meta_variables_fn meta_variables;
+   /**
+    * @see cad_cgi_response_flush_fn
+    */
+   cad_cgi_response_flush_fn flush;
    /**
     * @see cad_cgi_response_fd_fn
     */
@@ -301,6 +323,10 @@ struct cad_cgi_response {
     * @see cad_cgi_response_set_header_fn
     */
    cad_cgi_response_set_header_fn set_header;
+   /**
+    * @see cad_cgi_response_free_fn
+    */
+   cad_cgi_response_free_fn free;
 };
 
 /* ---------------------------------------------------------------- */

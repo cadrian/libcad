@@ -759,34 +759,6 @@ static int set_header(response_impl *this, const char *field, const char *value)
    return result;
 }
 
-static cad_cgi_response_t response_fn = {
-   (cad_cgi_response_cookies_fn) cookies,
-   (cad_cgi_response_meta_variables_fn) meta_variables,
-   (cad_cgi_response_fd_fn) response_fd,
-   (cad_cgi_response_body_fn) body,
-   (cad_cgi_response_redirect_fn) redirect,
-   (cad_cgi_response_set_status_fn) set_status,
-   (cad_cgi_response_set_content_type_fn) set_content_type,
-   (cad_cgi_response_set_header_fn) set_header,
-};
-
-static response_impl *new_cad_cgi_response(cad_memory_t memory) {
-   response_impl *result = memory.malloc(sizeof(response_impl));
-   if (!result) return NULL;
-   result->fn = response_fn;
-   result->memory = memory;
-   result->cookies = new_cookies(memory);
-   result->body = NULL;
-   result->body_stream = new_cad_output_stream_from_string(&(result->body), memory);
-   result->redirect_path = NULL;
-   result->redirect_fragment = NULL;
-   result->status = 0;
-   result->content_type = NULL;
-   result->headers = cad_new_hash(memory, cad_hash_strings);
-   result->meta = new_meta(memory);
-   return result;
-}
-
 static void flush_body(const char *body) {
    int status = 0;
    while (*body) {
@@ -841,6 +813,36 @@ static void flush_response(response_impl *response) {
    flush_body(response->body);
 }
 
+static cad_cgi_response_t response_fn = {
+   (cad_cgi_response_cookies_fn) cookies,
+   (cad_cgi_response_meta_variables_fn) meta_variables,
+   (cad_cgi_response_flush_fn) flush_response,
+   (cad_cgi_response_fd_fn) response_fd,
+   (cad_cgi_response_body_fn) body,
+   (cad_cgi_response_redirect_fn) redirect,
+   (cad_cgi_response_set_status_fn) set_status,
+   (cad_cgi_response_set_content_type_fn) set_content_type,
+   (cad_cgi_response_set_header_fn) set_header,
+   (cad_cgi_response_free_fn) free,
+};
+
+static response_impl *new_cad_cgi_response(cad_memory_t memory) {
+   response_impl *result = memory.malloc(sizeof(response_impl));
+   if (!result) return NULL;
+   result->fn = response_fn;
+   result->memory = memory;
+   result->cookies = new_cookies(memory);
+   result->body = NULL;
+   result->body_stream = new_cad_output_stream_from_string(&(result->body), memory);
+   result->redirect_path = NULL;
+   result->redirect_fragment = NULL;
+   result->status = 0;
+   result->content_type = NULL;
+   result->headers = cad_new_hash(memory, cad_hash_strings);
+   result->meta = new_meta(memory);
+   return result;
+}
+
 /* ---------------------------------------------------------------- */
 
 typedef struct {
@@ -853,18 +855,15 @@ static void free_cgi(cgi_impl *this) {
    this->memory.free(this);
 }
 
-static int run(cgi_impl *this) {
-   int result = -1;
-   response_impl *response = new_cad_cgi_response(this->memory);
-   if (response) {
-      int status = (this->handler)((cad_cgi_t*)this, (cad_cgi_response_t*)response);
-      if (status == 0) {
-         result = 0;
-         flush_response(response);
-      } else {
+static response_impl *run(cgi_impl *this) {
+   response_impl *result = new_cad_cgi_response(this->memory);
+   if (result) {
+      int status = (this->handler)((cad_cgi_t*)this, (cad_cgi_response_t*)result);
+      if (status != 0) {
          printf("Status: 500\r\nContent-Type: text/plain\r\n\r\nInternal error: handler failed with status %d\r\n", status);
+         free_response(result);
+         result = NULL;
       }
-      free_response(response);
    } else {
       printf("Status: 500\r\nContent-Type: text/plain\r\n\r\nInternal error: NULL response\r\n");
    }
