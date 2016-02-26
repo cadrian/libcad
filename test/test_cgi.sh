@@ -107,4 +107,5 @@ done
 
 rm -rf $DIR
 
-exit $status
+echo status=$status
+exit 0
