@@ -117,13 +117,14 @@ typedef int (*cad_stache_render_fn)(cad_stache_t *this, cad_input_stream_t *inpu
  *
  * @param[in] stache the 'stache caller
  * @param[in] the variable name
+ * @param[in] data given at the 'stache creation
  * @param[out] the resolved lookup to fill
  *
  * @return the resolved lookup type. If {@ref Cad_stache_not_found},
  * `resolved' will not be changed; otherwise it will be set with the
  * relevant data.
  */
-typedef cad_stache_lookup_type (*cad_stache_resolve_cb)(cad_stache_t *stache, const char *name, cad_stache_resolved_t **resolved);
+typedef cad_stache_lookup_type (*cad_stache_resolve_cb)(cad_stache_t *stache, const char *name, void *data, cad_stache_resolved_t **resolved);
 
 struct cad_stache {
    /**
@@ -142,10 +143,11 @@ struct cad_stache {
  *
  * @param[in] memory the memory manager
  * @param[in] callback the resolve callback
+ * @param[in] data forwarded to the callback
  *
  * @return a new 'stache
  */
-__PUBLIC__ cad_stache_t *new_cad_stache(cad_memory_t memory, cad_stache_resolve_cb callback);
+__PUBLIC__ cad_stache_t *new_cad_stache(cad_memory_t memory, cad_stache_resolve_cb callback, void *data);
 
 /**
  * @}

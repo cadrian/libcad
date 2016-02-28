@@ -139,13 +139,16 @@ static int free_extra(cad_stache_resolved_t *this) {
    return 1;
 }
 
-static cad_stache_lookup_type stache_callback(cad_stache_t *stache, const char *name, cad_stache_resolved_t **resolved) {
+static int CB_DATA = 42;
+
+static cad_stache_lookup_type stache_callback(cad_stache_t *stache, const char *name, void *cb_data, cad_stache_resolved_t **resolved) {
    cad_stache_lookup_type result = Cad_stache_not_found;
 
    assert(stache != NULL);
    assert(name != NULL);
    assert(strlen(name) > 0);
    assert(resolved != NULL);
+   assert(cb_data == &CB_DATA);
 
    if (!strcmp(name, "title")) {
       result = Cad_stache_string;
@@ -170,7 +173,7 @@ static cad_stache_lookup_type stache_callback(cad_stache_t *stache, const char *
 }
 
 int main() {
-   cad_stache_t *stache = new_cad_stache(stdlib_memory, stache_callback);
+   cad_stache_t *stache = new_cad_stache(stdlib_memory, stache_callback, &CB_DATA);
    assert(stache != NULL);
    cad_input_stream_t *input = new_cad_input_stream_from_string(TEMPLATE, stdlib_memory);
    char *output_string;

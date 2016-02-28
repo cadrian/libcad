@@ -34,6 +34,7 @@ struct cad_stache_impl {
    cad_stache_t fn;
    cad_memory_t memory;
    cad_stache_resolve_cb callback;
+   void *cb_data;
    char *open;
    char *close;
 };
@@ -263,7 +264,7 @@ static int render_stache_raw(struct cad_stache_impl *this, struct buffer *buffer
          result = 0;
       } else {
          cad_stache_resolved_t *resolved;
-         cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, &resolved);
+         cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, this->cb_data, &resolved);
          const char *c;
          switch(type) {
          case Cad_stache_not_found:
@@ -305,7 +306,7 @@ static int render_stache_escape(struct cad_stache_impl *this, struct buffer *buf
          result = 0;
       } else {
          cad_stache_resolved_t *resolved;
-         cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, &resolved);
+         cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, this->cb_data, &resolved);
          const char *c;
          switch(type) {
          case Cad_stache_not_found:
@@ -365,7 +366,7 @@ static int render_stache_loop(struct cad_stache_impl *this, struct buffer *buffe
    char *name = parse_name(this, NULL, buffer);
    if (name != NULL) {
       cad_stache_resolved_t *resolved;
-      cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, &resolved);
+      cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, this->cb_data, &resolved);
       const char *c;
       cad_input_stream_t *s;
       struct loop loop = { loop_type, name, type, NULL, buffer->index, 0, 0 };
@@ -547,7 +548,7 @@ static int render_stache_partial(struct cad_stache_impl *this, struct buffer *bu
    char *name = parse_name(this, NULL, buffer);
    if (name != NULL) {
       cad_stache_resolved_t *resolved;
-      cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, &resolved);
+      cad_stache_lookup_type type = this->callback((cad_stache_t*)this, name, this->cb_data, &resolved);
       const char *c;
       struct partial partial = { type, resolved, NULL, '\0' };
       switch(type) {
@@ -705,11 +706,12 @@ static cad_stache_t fn = {
    (cad_stache_render_fn)render,
 };
 
-cad_stache_t *new_cad_stache(cad_memory_t memory, cad_stache_resolve_cb callback) {
+cad_stache_t *new_cad_stache(cad_memory_t memory, cad_stache_resolve_cb callback, void *data) {
    struct cad_stache_impl *result = memory.malloc(sizeof(struct cad_stache_impl));
    if (!result) return NULL;
    result->fn       = fn;
    result->memory   = memory;
    result->callback = callback;
+   result->cb_data  = data;
    return (cad_stache_t*)result;
 }
