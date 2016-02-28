@@ -149,8 +149,10 @@ typedef void (*cad_output_stream_free_fn)(cad_output_stream_t *this);
  * @param[in] this the target output stream
  * @param[in] format the format of the bytes to put, compatible with printf()
  * @param[in] ... the arguments of the format
+ *
+ * @return the number of bytes written
  */
-typedef void (*cad_output_stream_put_fn  )(cad_output_stream_t *this, const char *format, ...) __PRINTF__;
+typedef int (*cad_output_stream_put_fn  )(cad_output_stream_t *this, const char *format, ...) __PRINTF__;
 
 /**
  * Puts bytes to the output stream
@@ -158,8 +160,10 @@ typedef void (*cad_output_stream_put_fn  )(cad_output_stream_t *this, const char
  * @param[in] this the target output stream
  * @param[in] format the format of the bytes to put, compatible with printf()
  * @param[in] args the arguments of the format
+ *
+ * @return the number of bytes written
  */
-typedef void (*cad_output_stream_vput_fn )(cad_output_stream_t *this, const char *format, va_list args);
+typedef int (*cad_output_stream_vput_fn )(cad_output_stream_t *this, const char *format, va_list args);
 
 /**
  * Flushes bytes to the underlying stream

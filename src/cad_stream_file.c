@@ -94,15 +94,17 @@ static void free_output(struct cad_input_stream_file *this) {
      this->memory.free(this);
 }
 
-static void vput(struct cad_output_stream_file *this, const char *format, va_list args) {
-     vfprintf(this->file, format, args);
+static int vput(struct cad_output_stream_file *this, const char *format, va_list args) {
+     return vfprintf(this->file, format, args);
 }
 
-static void put(struct cad_output_stream_file *this, const char *format, ...) {
+static int put(struct cad_output_stream_file *this, const char *format, ...) {
+     int result;
      va_list args;
      va_start(args, format);
-     vput(this, format, args);
+     result = vput(this, format, args);
      va_end(args);
+     return result;
 }
 
 static void flush(struct cad_output_stream_file *this) {

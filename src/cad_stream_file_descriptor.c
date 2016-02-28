@@ -99,7 +99,8 @@ static void free_output(struct cad_input_stream_file_descriptor *this) {
      this->memory.free(this);
 }
 
-static void vput(struct cad_output_stream_file_descriptor *this, const char *format, va_list args) {
+static int vput(struct cad_output_stream_file_descriptor *this, const char *format, va_list args) {
+     int result = 0;
      va_list args0;
      int i, n, m;
      va_copy(args0, args);
@@ -120,17 +121,22 @@ static void vput(struct cad_output_stream_file_descriptor *this, const char *for
           i = write(this->fd, this->buffer + m, n - m);
           if (!i) {
                // TODO: lost characters!!
-               return;
+               return result;
           }
           m += i;
+          result += i;
      }
+
+     return result;
 }
 
-static void put(struct cad_output_stream_file_descriptor *this, const char *format, ...) {
+static int put(struct cad_output_stream_file_descriptor *this, const char *format, ...) {
+     int result;
      va_list args;
      va_start(args, format);
-     vput(this, format, args);
+     result = vput(this, format, args);
      va_end(args);
+     return result;
 }
 
 static void flush(struct cad_output_stream_file_descriptor *this) {
