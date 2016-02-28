@@ -104,6 +104,7 @@ typedef cad_cgi_gateway_interface_t *(*cad_cgi_meta_gateway_interface_fn)(cad_cg
 typedef const char *(*cad_cgi_meta_path_info_fn)(cad_cgi_meta_t *this);
 typedef const char *(*cad_cgi_meta_path_translated_fn)(cad_cgi_meta_t *this);
 typedef cad_hash_t *(*cad_cgi_meta_query_string_fn)(cad_cgi_meta_t *this);
+typedef cad_hash_t *(*cad_cgi_meta_input_as_form_fn)(cad_cgi_t *this);
 typedef const char *(*cad_cgi_meta_remote_addr_fn)(cad_cgi_meta_t *this);
 typedef const char *(*cad_cgi_meta_remote_host_fn)(cad_cgi_meta_t *this);
 typedef const char *(*cad_cgi_meta_remote_ident_fn)(cad_cgi_meta_t *this);
@@ -144,6 +145,10 @@ struct cad_cgi_meta {
     * @see cad_cgi_meta_query_string_fn
     */
    cad_cgi_meta_query_string_fn query_string;
+   /**
+    * @see cad_cgi_meta_input_as_form_fn
+    */
+   cad_cgi_meta_input_as_form_fn input_as_form;
    /**
     * @see cad_cgi_meta_remote_addr_fn
     */

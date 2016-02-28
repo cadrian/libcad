@@ -42,6 +42,7 @@ typedef struct {
    char *path_info;
    char *path_translated;
    cad_hash_t *query_string;
+   cad_hash_t *input_as_form;
    char *remote_addr;
    char *remote_host;
    char *remote_ident;
@@ -267,113 +268,142 @@ static const char *path_translated(meta_impl *this) {
    return result;
 }
 
+static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) {
+   cad_hash_t *result = cad_new_hash(this->memory, cad_hash_strings);
+   int s = 0;
+   char *attribute = NULL;
+   char *value = NULL;
+   cad_output_stream_t *out = new_cad_output_stream_from_string(&attribute, this->memory);
+   char encoded = 0;
+   int c = in->item(in);
+   while (c != -1 && s >= 0) {
+      switch(s) {
+      case 0: // reading attribute
+         switch(c) {
+         case '=':
+            out->free(out);
+            out = new_cad_output_stream_from_string(&value, this->memory);
+            s = 10;
+            break;
+         case '%':
+            encoded = 0;
+            s = 1;
+            break;
+         case '+':
+            out->put(out, " ");
+            break;
+         default:
+            out->put(out, "%c", c);
+            break;
+         }
+         break;
+      case 10: // reading value
+         switch(c) {
+         case '&':
+         case '\n':
+            result->set(result, attribute, value);
+            this->memory.free(attribute);
+            attribute = value = NULL;
+            out->free(out);
+            out = new_cad_output_stream_from_string(&attribute, this->memory);
+            s = 0;
+            break;
+         case '%':
+            encoded = 0;
+            s = 1;
+            break;
+         case '+':
+            out->put(out, " ");
+            break;
+         default:
+            out->put(out, "%c", c);
+            break;
+         }
+         break;
+      case 1: case 11: // reading first hex
+         switch(c) {
+         case '0': case '1': case '2': case '3': case '4':
+         case '5': case '6': case '7': case '8': case '9':
+            encoded = c - '0';
+            s++;
+            break;
+         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+            encoded = c + 10 - 'A';
+            s++;
+            break;
+         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+            encoded = c + 10 - 'a';
+            s++;
+            break;
+         default:
+            s = -1;
+         }
+         break;
+      case 2: case 12: // reading second hex
+         switch(c) {
+         case '0': case '1': case '2': case '3': case '4':
+         case '5': case '6': case '7': case '8': case '9':
+            encoded *= 0x10;
+            encoded += c - '0';
+            out->put(out, "%c", encoded);
+            s -= 2;
+            break;
+         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+            encoded *= 0x10;
+            encoded += c + 10 - 'A';
+            out->put(out, "%c", encoded);
+            s -= 2;
+            break;
+         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+            encoded *= 0x10;
+            encoded += c + 10 - 'a';
+            out->put(out, "%c", encoded);
+            s -= 2;
+            break;
+         default:
+            s = -1;
+         }
+         break;
+      }
+      if (in->next(in)) {
+         s = -1;
+      } else {
+         c = in->item(in);
+      }
+   }
+   if (s == 10) {
+      result->set(result, attribute, value);
+      this->memory.free(attribute);
+   } else {
+      this->memory.free(attribute);
+      this->memory.free(value);
+   }
+   out->free(out);
+   return result;
+}
+
 static cad_hash_t *query_string(meta_impl *this) {
    cad_hash_t *result = this->query_string;
    if (result == NULL) {
-      result = this->query_string = cad_new_hash(this->memory, cad_hash_strings);
       const char *query_string = getenv("QUERY_STRING");
       if (query_string != NULL) {
-         const char *c = query_string;
-         int s = 0;
-         char *attribute = NULL;
-         char *value = NULL;
-         cad_output_stream_t *out = new_cad_output_stream_from_string(&attribute, this->memory);
-         char encoded = 0;
-         while (*c && s >= 0) {
-            switch(s) {
-            case 0: // reading attribute
-               switch(*c) {
-               case '=':
-                  out->free(out);
-                  out = new_cad_output_stream_from_string(&value, this->memory);
-                  s = 10;
-                  break;
-               case '%':
-                  encoded = 0;
-                  s = 1;
-                  break;
-               case '+':
-                  out->put(out, " ");
-                  break;
-               default:
-                  out->put(out, "%c", *c);
-                  break;
-               }
-               break;
-            case 10: // reading value
-               switch(*c) {
-               case '&':
-                  result->set(result, attribute, value);
-                  this->memory.free(attribute);
-                  attribute = value = NULL;
-                  out->free(out);
-                  out = new_cad_output_stream_from_string(&attribute, this->memory);
-                  s = 0;
-                  break;
-               case '%':
-                  encoded = 0;
-                  s = 1;
-                  break;
-               case '+':
-                  out->put(out, " ");
-                  break;
-               default:
-                  out->put(out, "%c", *c);
-                  break;
-               }
-               break;
-            case 1: case 11: // reading first hex
-               switch(*c) {
-               case '0': case '1': case '2': case '3': case '4':
-               case '5': case '6': case '7': case '8': case '9':
-                  encoded = *c - '0';
-                  s++;
-                  break;
-               case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-                  encoded = *c + 10 - 'A';
-                  s++;
-                  break;
-               case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-                  encoded = *c + 10 - 'a';
-                  s++;
-                  break;
-               default:
-                  s = -1;
-               }
-               break;
-            case 2: case 12: // reading second hex
-               switch(*c) {
-               case '0': case '1': case '2': case '3': case '4':
-               case '5': case '6': case '7': case '8': case '9':
-                  encoded += *c - '0';
-                  out->put(out, "%c", encoded);
-                  s -= 2;
-                  break;
-               case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-                  encoded += *c + 10 - 'A';
-                  out->put(out, "%c", encoded);
-                  s -= 2;
-                  break;
-               case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-                  encoded += *c + 10 - 'a';
-                  out->put(out, "%c", encoded);
-                  s -= 2;
-                  break;
-               default:
-                  s = -1;
-               }
-               break;
-            }
-            c++;
+         cad_input_stream_t *in = new_cad_input_stream_from_string(query_string, this->memory);
+         if (in != NULL) {
+            result = this->query_string = parse_query_or_form(this, in);
+            in->free(in);
          }
-         if (s == 10) {
-            result->set(result, attribute, value);
-            this->memory.free(attribute);
-         } else {
-            this->memory.free(attribute);
-            this->memory.free(value);
-         }
-         out->free(out);
+      }
+   }
+   return result;
+}
+
+static cad_hash_t *input_as_form(meta_impl *this) {
+   cad_hash_t *result = this->input_as_form;
+   if (result == NULL) {
+      cad_input_stream_t *in = new_cad_input_stream_from_file_descriptor(STDIN_FILENO, this->memory);
+      if (in != NULL) {
+         result = this->input_as_form = parse_query_or_form(this, in);
+         in->free(in);
       }
    }
    return result;
@@ -574,6 +604,7 @@ static cad_cgi_meta_t meta_fn = {
    (cad_cgi_meta_path_info_fn) path_info,
    (cad_cgi_meta_path_translated_fn) path_translated,
    (cad_cgi_meta_query_string_fn) query_string,
+   (cad_cgi_meta_input_as_form_fn) input_as_form,
    (cad_cgi_meta_remote_addr_fn) remote_addr,
    (cad_cgi_meta_remote_host_fn) remote_host,
    (cad_cgi_meta_remote_ident_fn) remote_ident,
