@@ -632,6 +632,10 @@ static void free_meta(meta_impl *this) {
       this->query_string->clean(this->query_string, (cad_hash_iterator_fn)clean_string, this);
       this->query_string->free(this->query_string);
    }
+   if (this->input_as_form != NULL) {
+      this->input_as_form->clean(this->input_as_form, (cad_hash_iterator_fn)clean_string, this);
+      this->input_as_form->free(this->input_as_form);
+   }
    this->memory.free(this->remote_addr);
    this->memory.free(this->remote_host);
    this->memory.free(this->remote_ident);
