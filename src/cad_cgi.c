@@ -884,6 +884,7 @@ typedef struct {
    cad_cgi_t fn;
    cad_memory_t memory;
    cad_cgi_handle_cb handler;
+   void *data;
 } cgi_impl;
 
 static void free_cgi(cgi_impl *this) {
@@ -893,7 +894,7 @@ static void free_cgi(cgi_impl *this) {
 static response_impl *run(cgi_impl *this) {
    response_impl *result = new_cad_cgi_response(this->memory);
    if (result) {
-      int status = (this->handler)((cad_cgi_t*)this, (cad_cgi_response_t*)result);
+      int status = (this->handler)((cad_cgi_t*)this, (cad_cgi_response_t*)result, this->data);
       if (status != 0) {
          printf("Status: 500\r\nContent-Type: text/plain\r\n\r\nInternal error: handler failed with status %d\r\n", status);
          free_response(result);
@@ -915,11 +916,12 @@ static cad_cgi_t cgi_fn = {
    (cad_cgi_fd_fn) cgi_fd,
 };
 
-cad_cgi_t *new_cad_cgi(cad_memory_t memory, cad_cgi_handle_cb handler) {
+cad_cgi_t *new_cad_cgi(cad_memory_t memory, cad_cgi_handle_cb handler, void *data) {
    cgi_impl *result = memory.malloc(sizeof(cgi_impl));
    if (!result) return NULL;
    result->fn = cgi_fn;
    result->memory = memory;
    result->handler = handler;
+   result->data = data;
    return (cad_cgi_t*)result;
 }

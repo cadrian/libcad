@@ -21,10 +21,13 @@
 #include "test.h"
 #include "cad_cgi.h"
 
+static int DATA = 42;
+
 /**
  * The tested content must have been set by the test_cgi.sh script.
  */
-static int handler(cad_cgi_t *cgi, cad_cgi_response_t *response) {
+static int handler(cad_cgi_t *cgi, cad_cgi_response_t *response, void *data) {
+   assert(data == &DATA);
    cad_cgi_meta_t *meta = response->meta_variables(response);
    const char *verb = meta->request_method(meta);
    assert(verb != NULL && !strcmp(verb, "GET"));
@@ -60,7 +63,7 @@ int main(int argc, char **argv) {
    }
 
    int result = 1;
-   cad_cgi_t *cgi = new_cad_cgi(stdlib_memory, handler);
+   cad_cgi_t *cgi = new_cad_cgi(stdlib_memory, handler, &DATA);
    cad_cgi_response_t *response = cgi->run(cgi);
    if (response != NULL) {
       response->flush(response);

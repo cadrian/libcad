@@ -573,20 +573,22 @@ typedef struct cad_cgi_cookie {
  *
  * @param[in] cgi the calling CGI context
  * @param[in] response the response to prepare
+ * @param[in] data the handler data
  *
  * @return 0 on success, anything else otherwise
  */
-typedef int (*cad_cgi_handle_cb)(cad_cgi_t *cgi, cad_cgi_response_t *response);
+typedef int (*cad_cgi_handle_cb)(cad_cgi_t *cgi, cad_cgi_response_t *response, void *data);
 
 /**
  * Creates a new CGI context using the provided handler.
  *
  * @param[in] memory the memory manager
  * @param[in] handler the CGI handler
+ * @param[in] data the handler data
  *
  * @return a new CGI context
  */
-__PUBLIC__ cad_cgi_t *new_cad_cgi(cad_memory_t memory, cad_cgi_handle_cb handler);
+__PUBLIC__ cad_cgi_t *new_cad_cgi(cad_memory_t memory, cad_cgi_handle_cb handler, void *data);
 
 /**
  * Creates a new cookie with the given name.
