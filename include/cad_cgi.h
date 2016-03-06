@@ -293,6 +293,10 @@ typedef int (*cad_cgi_response_free_fn)(cad_cgi_response_t *this);
 
 struct cad_cgi_response {
    /**
+    * @see cad_cgi_response_free_fn
+    */
+   cad_cgi_response_free_fn free;
+   /**
     * @see cad_cgi_response_cookies_fn
     */
    cad_cgi_response_cookies_fn cookies;
@@ -328,10 +332,6 @@ struct cad_cgi_response {
     * @see cad_cgi_response_set_header_fn
     */
    cad_cgi_response_set_header_fn set_header;
-   /**
-    * @see cad_cgi_response_free_fn
-    */
-   cad_cgi_response_free_fn free;
 };
 
 /* ---------------------------------------------------------------- */

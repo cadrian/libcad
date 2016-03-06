@@ -849,6 +849,7 @@ static void flush_response(response_impl *response) {
 }
 
 static cad_cgi_response_t response_fn = {
+   (cad_cgi_response_free_fn) free_response,
    (cad_cgi_response_cookies_fn) cookies,
    (cad_cgi_response_meta_variables_fn) meta_variables,
    (cad_cgi_response_flush_fn) flush_response,
@@ -858,7 +859,6 @@ static cad_cgi_response_t response_fn = {
    (cad_cgi_response_set_status_fn) set_status,
    (cad_cgi_response_set_content_type_fn) set_content_type,
    (cad_cgi_response_set_header_fn) set_header,
-   (cad_cgi_response_free_fn) free,
 };
 
 static response_impl *new_cad_cgi_response(cad_memory_t memory) {
