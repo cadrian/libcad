@@ -104,10 +104,11 @@ typedef void (*cad_stache_free_fn)(cad_stache_t *this);
  * @param[in] input the input stream, that contains the 'stache template
  * @param[in] output the output stream, that will be written to
  * @param[in] on_error called on error with a message and the parse index at which the error occurs
+ * @param[in] on_error_data passed to on_error
  *
  * @return 0 if OK, -1 if error
  */
-typedef int (*cad_stache_render_fn)(cad_stache_t *this, cad_input_stream_t *input, cad_output_stream_t *output, void (*on_error)(const char *, int));
+typedef int (*cad_stache_render_fn)(cad_stache_t *this, cad_input_stream_t *input, cad_output_stream_t *output, void (*on_error)(const char *, int, void*), void *on_error_data);
 
 /**
  * Callback implemented by the caller; used to resolve variables.

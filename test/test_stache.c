@@ -27,7 +27,7 @@
 static const char *error_message = NULL;
 static int error_index = 0;
 static int error = 0;
-static void on_error(const char *m, int i) {
+static void on_error(const char *m, int i, void *data) {
    fprintf(stderr, "**** %s at %d\n", m, i);
    error_message = m;
    error_index = i;
@@ -179,7 +179,7 @@ int main() {
    char *output_string;
    cad_output_stream_t *output = new_cad_output_stream_from_string(&output_string, stdlib_memory);
 
-   stache->render(stache, input, output, on_error);
+   stache->render(stache, input, output, on_error, NULL);
    assert(error == 0);
 
    assert(!strcmp(output_string, EXPECTED_RESULT));

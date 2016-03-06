@@ -654,7 +654,7 @@ static int render_template(struct cad_stache_impl *this, struct buffer *buffer, 
    return result;
 }
 
-static int render(struct cad_stache_impl *this, cad_input_stream_t *input, cad_output_stream_t *output, void (*on_error)(const char *, int)) {
+static int render(struct cad_stache_impl *this, cad_input_stream_t *input, cad_output_stream_t *output, void (*on_error)(const char *, int, void*), void *on_error_data) {
    int result = 0;
    this->open = this->memory.malloc(3);
    sprintf(this->open, "%s", "{{");
@@ -678,18 +678,20 @@ static int render(struct cad_stache_impl *this, cad_input_stream_t *input, cad_o
       if (render_template(this, &buffer, output)) {
          if (buffer.loops->count(buffer.loops) > 0) {
             if (on_error != NULL) {
-               on_error("Unfinished loops", buffer.index);
+               on_error("Unfinished loops", buffer.index, on_error_data);
             }
             result = -1;
          }
       } else {
          if (on_error != NULL) {
-            on_error(buffer.error, buffer.index);
+            on_error(buffer.error, buffer.index, on_error_data);
          }
          result = -1;
       }
    } else {
-      on_error("Empty buffer", 0);
+      if (on_error != NULL) {
+         on_error("Empty buffer", 0, on_error_data);
+      }
       result = -1;
    }
 
