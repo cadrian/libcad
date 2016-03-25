@@ -843,6 +843,7 @@ static void flush_response(response_impl *response) {
    printf("Content-Type: %s\r\n", response->content_type == NULL ? "text/plain" : response->content_type);
    printf("Status: %d\r\n", response->status == 0 ? 200 : response->status);
    response->headers->iterate(response->headers, (cad_hash_iterator_fn)flush_header, response);
+   flush_cookies(response->cookies);
    putchar('\r');
    putchar('\n');
    flush_body(response->body);
