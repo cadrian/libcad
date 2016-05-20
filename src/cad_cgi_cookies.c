@@ -207,12 +207,141 @@ static cad_cgi_cookies_t cookies_fn = {
    (cad_cgi_cookies_set_fn) set,
 };
 
+static char *parse_cookie_name(cad_memory_t memory, const char *start, const char *end) {
+   int n = end - start;
+   char *result = memory.malloc(n + 1);
+   strncpy(result, start, n);
+   result[n] = 0;
+   return result;
+}
+
+static char *parse_cookie_value(cad_memory_t memory, const char *start, const char *end) {
+   int n = 0, d, s = 0;
+   char *result;
+   const char *c = start;
+   while (c != end) {
+      switch (*c) {
+      case '%':
+         c += 2;
+         break;
+      }
+      n++;
+      c++;
+   }
+   result = memory.malloc(n + 1);
+   c = start;
+   while (c != end) {
+      switch(s) {
+      case 0:
+         switch (*c) {
+         case '%':
+            d = 0;
+            s = 1;
+            break;
+         default:
+            *result++ = *c;
+         }
+         break;
+      case 1:
+         switch (*c) {
+         case '0': case '1': case '2': case '3': case '4':
+         case '5': case '6': case '7': case '8': case '9':
+            d = *c - '0';
+            break;
+         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+            d = *c + 10 - 'A';
+            break;
+         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+            d = *c + 10 - 'a';
+            break;
+         }
+         s = 2;
+         break;
+      case 2:
+         switch (*c) {
+         case '0': case '1': case '2': case '3': case '4':
+         case '5': case '6': case '7': case '8': case '9':
+            d += *c - '0';
+            break;
+         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+            d += *c + 10 - 'A';
+            break;
+         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+            d += *c + 10 - 'a';
+            break;
+         }
+         *result++ = (char)d;
+         s = 0;
+         break;
+      }
+      c++;
+   }
+   return result;
+}
+
+static void parse_cookies(cad_hash_t *jar, const char *http_cookie, cad_memory_t memory) {
+   const char *name = http_cookie, *value = NULL;
+   char *n, *v;
+   int state = 0;
+   cad_cgi_cookie_t *cookie;
+   while (*http_cookie) {
+      switch (state) {
+      case 0: // reading cookie name
+         switch (*http_cookie) {
+         case '=':
+            state = 1;
+            value = http_cookie + 1;
+            break;
+         case ';':
+            n = parse_cookie_name(memory, name, http_cookie);
+            cookie = new_cad_cgi_cookie(memory, n);
+            jar->set(jar, cookie->name(cookie), cookie);
+            memory.free(n);
+            state = 2;
+            break;
+         }
+         break;
+      case 1: // reading cookie value
+         switch (*http_cookie) {
+         case ';':
+            n = parse_cookie_name(memory, name, value-1);
+            v = parse_cookie_value(memory, value, http_cookie);
+            cookie = new_cad_cgi_cookie(memory, n);
+            cookie->set_value(cookie, v);
+            jar->set(jar, cookie->name(cookie), cookie);
+            memory.free(v);
+            memory.free(n);
+            state = 2;
+            break;
+         }
+         break;
+      case 2: // at the end of a cookie, waiting for the next
+         switch (*http_cookie) {
+         case ' ': // ignore blank
+            break;
+         default:
+            name = http_cookie;
+            value = NULL;
+            state = 0;
+            break;
+         }
+      }
+      http_cookie++;
+   }
+}
+
 cad_cgi_cookies_t *new_cookies(cad_memory_t memory) {
    cookies_impl *result = memory.malloc(sizeof(cookies_impl));
    if (!result) return NULL;
    result->fn = cookies_fn;
    result->memory = memory;
    result->jar = cad_new_hash(memory, cad_hash_strings);
+
+   const char *http_cookie = getenv("HTTP_COOKIE");
+   if (http_cookie != NULL) {
+      parse_cookies(result->jar, http_cookie, memory);
+   }
+
    return (cad_cgi_cookies_t*)result;
 }
 
@@ -232,10 +361,56 @@ static char *rfc1123(time_t t, char *buf, size_t buflen)
     return buf;
 }
 
+static char *encode_value(const char *value, cad_memory_t memory) {
+   const char *c = value;
+   char *v;
+   int count = 1;
+   while (*c) {
+      switch (*c) {
+      case '%': case '=': case ';':
+         count += 3;
+         break;
+      default:
+         count++;
+      }
+      c++;
+   }
+   char *result = memory.malloc(strlen(value) + 1);
+   c = value;
+   v = result;
+   while (*c) {
+      switch (*c) {
+      case '%':
+         *v++ = '%';
+         *v++ = '2';
+         *v++ = '5';
+         break;
+      case '=':
+         *v++ = '%';
+         *v++ = '3';
+         *v++ = 'd';
+         break;
+      case ';':
+         *v++ = '%';
+         *v++ = '3';
+         *v++ = 'b';
+         break;
+      default:
+         *v++ = *c;
+      }
+      c++;
+   }
+   *v = 0;
+
+   return result;
+}
 
 static void flush_cookie(void *hash, int index, const char *key, cookie_impl *cookie) {
    if (cookie->changed) {
-      printf("Set-Cookie: %s=%s", cookie->name, cookie->value == NULL ? "" : cookie->value);
+      char *encoded_value = encode_value(cookie->value, cookie->memory);
+      printf("Set-Cookie: %s=%s", cookie->name, cookie->value == NULL ? "" : encoded_value);
+      cookie->memory.free(encoded_value);
+
       if (cookie->expires > 0) {
          char buf[30];
          rfc1123(cookie->expires, buf, 30);
