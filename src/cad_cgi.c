@@ -310,7 +310,7 @@ static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) 
             break;
          case '%':
             encoded = 0;
-            s = 1;
+            s = 11;
             break;
          case '+':
             out->put(out, " ");
