@@ -59,7 +59,7 @@ static cad_cgi_auth_type_e auth_type(meta_impl *this) {
    int result = this->auth_type;
    if (result == -2) {
       const char *auth_type = getenv("AUTH_TYPE");
-      if (auth_type == NULL || !auth_type) {
+      if (auth_type == NULL || !*auth_type) {
          result = Auth_none;
       } else if (!strcmp(auth_type, "Basic")) {
          result = Auth_basic;
