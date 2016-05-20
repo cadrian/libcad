@@ -174,7 +174,7 @@ target/out/%.po: src/%.c include/*.h
 target/out/%.exe: test/%.c test/*.h target/$(SOBJ).0
 	@echo "Compiling test: $<"
 	mkdir -p target/out
-	-cp -fp $(<:.c=.sh) target/out/
+	-cp -fp $(<:.c=.sh) target/out/ 2>/dev/null
 	$(CC) $(CPPFLAGS) $(CFLAGS) -Wall -Werror -L $(BUILD_DIR)/target -I $(BUILD_DIR)/include $(LDFLAGS) -o $@ $< $(PROJECT:lib%=-l%) $(LINK_LIBS)
 
 .PHONY: all lib doc clean run-test release.main release.doc
