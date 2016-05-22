@@ -356,6 +356,26 @@ typedef cad_cgi_cookie_t *(*cad_cgi_cookies_get_fn)(cad_cgi_cookies_t *this, con
  */
 typedef int (*cad_cgi_cookies_set_fn)(cad_cgi_cookies_t *this, cad_cgi_cookie_t *cookie);
 
+/**
+ * The user must provide a function of this type to iterate through the cookie jar.
+ *
+ * @param[in] jar the cookie jar onto which the iterator is iterating
+ * @param[in] cookie the current cookie
+ * @param[in] data the user data
+ *
+ */
+typedef void (*cad_cgi_cookie_iterator_fn)(cad_cgi_cookies_t *jar, cad_cgi_cookie_t *cookie, void *data);
+
+/**
+ * Iterate on cookies
+ *
+ * @param[in] this the target CGI cookies
+ * @param[in] iterator the function called once per cookie (cannot be NULL)
+ * @param[in] data a user data pointer passed to the `iterator` function
+ *
+ */
+typedef void (*cad_cgi_cookies_iterate_fn)(cad_cgi_cookies_t *this, cad_cgi_cookie_iterator_fn iterator, void *data);
+
 struct cad_cgi_cookies {
    /**
     * @see _cookies_get_fn
@@ -365,6 +385,10 @@ struct cad_cgi_cookies {
     * @see cad_cgi_cookies_set_fn
     */
    cad_cgi_cookies_set_fn set;
+   /**
+    * @see cad_cgi_cookies_iterate_fn
+    */
+   cad_cgi_cookies_iterate_fn iterate;
 };
 
 /* ---------------------------------------------------------------- */

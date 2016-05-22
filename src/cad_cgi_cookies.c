@@ -202,9 +202,25 @@ static int set(cookies_impl *this, cad_cgi_cookie_t *cookie) {
    return 0;
 }
 
+typedef struct {
+   cad_cgi_cookie_iterator_fn iterator;
+   cad_cgi_cookies_t *jar;
+   void *data;
+} iterate_data_t;
+
+static void jar_iterate(void *hash, int index, const char *key, cad_cgi_cookie_t *cookie, iterate_data_t *data) {
+   data->iterator(data->jar, cookie, data->data);
+}
+
+static void iterate(cookies_impl *this, cad_cgi_cookie_iterator_fn iterator, void *data) {
+   iterate_data_t hash_data = {iterator, (cad_cgi_cookies_t*)this, data};
+   this->jar->iterate(this->jar, (cad_hash_iterator_fn)jar_iterate, &hash_data);
+}
+
 static cad_cgi_cookies_t cookies_fn = {
    (cad_cgi_cookies_get_fn) get,
    (cad_cgi_cookies_set_fn) set,
+   (cad_cgi_cookies_iterate_fn) iterate,
 };
 
 static char *parse_cookie_name(cad_memory_t memory, const char *start, const char *end) {
