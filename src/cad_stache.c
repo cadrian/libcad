@@ -512,10 +512,10 @@ static int render_stache_delimiters(struct cad_stache_impl *this, struct buffer 
                this->memory.free(this->open);
                this->memory.free(this->close);
 
-               this->open = malloc(strlen(open_delimiter) + 1);
+               this->open = this->memory.malloc(strlen(open_delimiter) + 1);
                sprintf(this->open, "%s", open_delimiter);
 
-               this->close = malloc(n);
+               this->close = this->memory.malloc(n);
                sprintf(this->close, "%s", close_delimiter);
             } else {
                buffer->error = "invalid delimiter change: missing closing equal sign";
