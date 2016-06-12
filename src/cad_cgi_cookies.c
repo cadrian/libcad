@@ -231,118 +231,118 @@ static char *parse_cookie_name(cad_memory_t memory, const char *start, const cha
    return result;
 }
 
+static int hex(const char c) {
+   switch (c) {
+   case '0': case '1': case '2': case '3': case '4':
+   case '5': case '6': case '7': case '8': case '9':
+      return c - '0';
+      break;
+   case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+      return c + 10 - 'A';
+      break;
+   case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+      return c + 10 - 'a';
+      break;
+   }
+   return 0;
+}
+
 static char *parse_cookie_value(cad_memory_t memory, const char *start, const char *end) {
    int n = 0, d, s = 0;
-   char *result;
+   char *result, *r;
    const char *c = start;
-   while (c != end) {
-      switch (*c) {
-      case '%':
+   while (c < end) {
+      if (*c == '%') {
          c += 2;
-         break;
       }
       n++;
       c++;
    }
-   result = memory.malloc(n + 1);
+   r = result = memory.malloc(n + 1);
    c = start;
-   while (c != end) {
+   while (c < end) {
       switch(s) {
       case 0:
          switch (*c) {
          case '%':
-            d = 0;
             s = 1;
             break;
          default:
-            *result++ = *c;
+            *r++ = *c;
          }
          break;
       case 1:
-         switch (*c) {
-         case '0': case '1': case '2': case '3': case '4':
-         case '5': case '6': case '7': case '8': case '9':
-            d = *c - '0';
-            break;
-         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-            d = *c + 10 - 'A';
-            break;
-         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-            d = *c + 10 - 'a';
-            break;
-         }
+         d = hex(*c);
          s = 2;
          break;
       case 2:
-         switch (*c) {
-         case '0': case '1': case '2': case '3': case '4':
-         case '5': case '6': case '7': case '8': case '9':
-            d += *c - '0';
-            break;
-         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-            d += *c + 10 - 'A';
-            break;
-         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-            d += *c + 10 - 'a';
-            break;
-         }
-         *result++ = (char)d;
+         d = d << 4 | hex(*c);
+         *r++ = (char)d;
          s = 0;
          break;
       }
       c++;
    }
+   *r = 0;
    return result;
 }
 
 static void parse_cookies(cad_hash_t *jar, const char *http_cookie, cad_memory_t memory) {
    const char *name = http_cookie, *value = NULL;
    char *n, *v;
-   int state = 0;
+   int state = *http_cookie ? 1 : 0;
    cad_cgi_cookie_t *cookie;
-   while (*http_cookie) {
+   while (state) {
       switch (state) {
-      case 0: // reading cookie name
+      case 1: // reading cookie name
          switch (*http_cookie) {
          case '=':
-            state = 1;
+            state = 2;
             value = http_cookie + 1;
             break;
+         case '\0':
          case ';':
             n = parse_cookie_name(memory, name, http_cookie);
             cookie = new_cad_cgi_cookie(memory, n);
+            ((cookie_impl *)cookie)->changed = 0;
             jar->set(jar, cookie->name(cookie), cookie);
             memory.free(n);
-            state = 2;
+            state = *http_cookie ? 3 : 0;
             break;
          }
          break;
-      case 1: // reading cookie value
+      case 2: // reading cookie value
          switch (*http_cookie) {
+         case '\0':
          case ';':
             n = parse_cookie_name(memory, name, value-1);
             v = parse_cookie_value(memory, value, http_cookie);
+            // TODO: old cookie lost; is not freed
             cookie = new_cad_cgi_cookie(memory, n);
             cookie->set_value(cookie, v);
+            ((cookie_impl *)cookie)->changed = 0;
             jar->set(jar, cookie->name(cookie), cookie);
             memory.free(v);
             memory.free(n);
-            state = 2;
+            state = *http_cookie ? 3 : 0;
             break;
          }
          break;
-      case 2: // at the end of a cookie, waiting for the next
+      case 3: // at the end of a cookie, waiting for the next
          switch (*http_cookie) {
          case ' ': // ignore blank
             break;
          default:
             name = http_cookie;
             value = NULL;
-            state = 0;
+            state = *http_cookie ? 1 : 0;
             break;
          }
+         break;
       }
-      http_cookie++;
+      if (state) {
+         http_cookie++;
+      }
    }
 }
 
