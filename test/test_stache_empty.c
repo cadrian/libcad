@@ -1,0 +1,161 @@
+/*
+  This file is part of libCad.
+
+  libCad is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, version 3 of the License.
+
+  libCad is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with libCad.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#include <string.h>
+
+#include "test.h"
+#include "cad_stache.h"
+#include "cad_stream.h"
+
+#define EXTRA_TEMPLATE "<p>That was {{title}}.</p>"
+#define TEMPLATE "<html><head><title>{{{title}}}</title></head><body><h1>{{title}}</h1><ul>{{#list}}<li>{{data}}</li>{{/list}}{{^list}}<li>NO DATA</li>{{/list}}</ul>{{>extra}}</body></html>"
+#define EXPECTED_RESULT "<html><head><title>Test 'stache</title></head><body><h1>Test &apos;stache</h1><ul><li>NO DATA</li></ul><p>That was Test &apos;stache.</p></body></html>"
+
+static const char *error_message = NULL;
+static int error_index = 0;
+static int error = 0;
+static void on_error(const char *m, int i, void *data) {
+   fprintf(stderr, "**** %s at %d\n", m, i);
+   error_message = m;
+   error_index = i;
+   error = 1;
+}
+
+static cad_stache_resolved_t *data;
+
+static const char *get_title(cad_stache_resolved_t *this);
+static int free_title(cad_stache_resolved_t *this);
+static cad_stache_resolved_t title = {
+   .string = {
+      .get = get_title,
+      .free = free_title,
+   },
+};
+static const char *get_title(cad_stache_resolved_t *this) {
+   assert(this == &title);
+   return "Test 'stache";
+}
+static int free_title(cad_stache_resolved_t *this) {
+   assert(this == &title);
+   return 1;
+}
+
+static const char *get_data1(cad_stache_resolved_t *this);
+static int free_data1(cad_stache_resolved_t *this);
+static cad_stache_resolved_t data1 = {
+   .string = {
+      .get = get_data1,
+      .free = free_data1,
+   },
+};
+static const char *get_data1(cad_stache_resolved_t *this) {
+   assert(this == &data1);
+   assert(this == data);
+   return "foo";
+}
+static int free_data1(cad_stache_resolved_t *this) {
+   assert(this == &data1);
+   assert(this == data);
+   return 1;
+}
+
+static const char *get_data2(cad_stache_resolved_t *this);
+static int free_data2(cad_stache_resolved_t *this);
+static cad_stache_resolved_t data2 = {
+   .string = {
+      .get = get_data2,
+      .free = free_data2,
+   },
+};
+static const char *get_data2(cad_stache_resolved_t *this) {
+   assert(this == &data2);
+   assert(this == data);
+   return "bar";
+}
+static int free_data2(cad_stache_resolved_t *this) {
+   assert(this == &data2);
+   assert(this == data);
+   return 1;
+}
+
+static const char *get_extra(cad_stache_resolved_t *this);
+static int free_extra(cad_stache_resolved_t *this);
+static cad_stache_resolved_t extra = {
+   .string = {
+      .get = get_extra,
+      .free = free_extra,
+   },
+};
+static const char *get_extra(cad_stache_resolved_t *this) {
+   assert(this == &extra);
+   return EXTRA_TEMPLATE;
+}
+static int free_extra(cad_stache_resolved_t *this) {
+   assert(this == &extra);
+   return 1;
+}
+
+static int CB_DATA = 42;
+
+static cad_stache_lookup_type stache_callback(cad_stache_t *stache, const char *name, void *cb_data, cad_stache_resolved_t **resolved) {
+   cad_stache_lookup_type result = Cad_stache_not_found;
+
+   assert(stache != NULL);
+   assert(name != NULL);
+   assert(strlen(name) > 0);
+   assert(resolved != NULL);
+   assert(cb_data == &CB_DATA);
+
+   if (!strcmp(name, "title")) {
+      result = Cad_stache_string;
+      *resolved = &title;
+   } else if (!strcmp(name, "list")) {
+      result = Cad_stache_not_found;
+   } else if (!strcmp(name, "data")) {
+      if (data) {
+         result = Cad_stache_string;
+         *resolved = data;
+      }
+   } else if (!strcmp(name, "extra")) {
+      result = Cad_stache_string;
+      *resolved = &extra;
+   } else {
+      printf("INVALID NAME: %s\n", name);
+      assert(0 /* invalid name */);
+   }
+
+   return result;
+}
+
+int main() {
+   cad_stache_t *stache = new_cad_stache(stdlib_memory, stache_callback, &CB_DATA);
+   assert(stache != NULL);
+   cad_input_stream_t *input = new_cad_input_stream_from_string(TEMPLATE, stdlib_memory);
+   char *output_string;
+   cad_output_stream_t *output = new_cad_output_stream_from_string(&output_string, stdlib_memory);
+
+   stache->render(stache, input, output, on_error, NULL);
+   assert(error == 0);
+
+   assert(!strcmp(output_string, EXPECTED_RESULT));
+
+   stdlib_memory.free(output_string);
+   output->free(output);
+   input->free(input);
+   stache->free(stache);
+
+   return 0;
+}

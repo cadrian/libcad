@@ -41,7 +41,7 @@ struct cad_stache_impl {
 
 enum loop_type {
    loop_else = 0,
-   loop_if,
+   loop_while,
 };
 
 struct loop {
@@ -171,7 +171,7 @@ static int buffer_look_at(struct buffer *buffer, const char *expected) {
    return result;
 }
 
-void buffer_unwind_loops(struct buffer *buffer){
+static void buffer_unwind_loops(struct buffer *buffer){
    int i, n = buffer->loops->count(buffer->loops);
    struct loop *loop;
    for (i = 0; i < n; i++) {
@@ -181,18 +181,23 @@ void buffer_unwind_loops(struct buffer *buffer){
    buffer->loops->clear(buffer->loops);
 }
 
-int buffer_skip(struct buffer *buffer) {
+static int buffer_skip_output(struct buffer *buffer) {
    int result = 0;
    int n = buffer->loops->count(buffer->loops);
-   if (n > 0) {
+   while (!result && n > 0) {
       struct loop *loop = buffer->loops->get(buffer->loops, n - 1);
-      result = !!(loop->type) == !!(loop->empty);
+      if (loop->type == loop_while) {
+         result = loop->empty;
+      } else {
+         result = !loop->empty;
+      }
+      n--;
    }
    return result;
 }
 
 void buffer_output(struct buffer *buffer, cad_output_stream_t *output, const char *format, ...) {
-   if (!buffer_skip(buffer)) {
+   if (!buffer_skip_output(buffer)) {
       va_list args;
       va_start(args, format);
       output->vput(output, format, args);
@@ -372,7 +377,7 @@ static int render_stache_loop(struct cad_stache_impl *this, struct buffer *buffe
       struct loop loop = { loop_type, name, type, NULL, buffer->index, 0, 0 };
       switch(type) {
       case Cad_stache_not_found:
-         // nothing written
+         loop.empty = 1;
          break;
       case Cad_stache_string:
          c = resolved->string.get(resolved);
@@ -413,8 +418,8 @@ static int render_stache_loop(struct cad_stache_impl *this, struct buffer *buffe
    return result;
 }
 
-static int render_stache_if(struct cad_stache_impl *this, struct buffer *buffer, cad_output_stream_t *output) {
-   return render_stache_loop(this, buffer, output, loop_if);
+static int render_stache_while(struct cad_stache_impl *this, struct buffer *buffer, cad_output_stream_t *output) {
+   return render_stache_loop(this, buffer, output, loop_while);
 }
 
 static int render_stache_else(struct cad_stache_impl *this, struct buffer *buffer, cad_output_stream_t *output) {
@@ -436,8 +441,7 @@ static int render_stache_end(struct cad_stache_impl *this, struct buffer *buffer
          } else {
             switch(loop->lookup_type) {
             case Cad_stache_not_found:
-               buffer->error = "BUG: looping on not-found data";
-               result = 0;
+               buffer->loops->del(buffer->loops, buffer->loops->count(buffer->loops) - 1);
                this->memory.free(loop->name);
                break;
             case Cad_stache_string:
@@ -613,7 +617,7 @@ static int render_stache(struct cad_stache_impl *this, struct buffer *buffer, ca
             result = render_stache_raw(this, buffer, output);
             break;
          case '#':
-            result = render_stache_if(this, buffer, output);
+            result = render_stache_while(this, buffer, output);
             break;
          case '/':
             result = render_stache_end(this, buffer, output);
