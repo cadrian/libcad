@@ -380,19 +380,19 @@ static int render_stache_loop(struct cad_stache_impl *this, struct buffer *buffe
          loop.empty = 1;
          break;
       case Cad_stache_string:
-         c = resolved->string.get(resolved);
+         c = resolved->string.get == NULL ? NULL : resolved->string.get(resolved);
          loop.empty = (c == NULL) || (*c == 0);
-         if (!resolved->string.free(resolved)) {
+         if (resolved->string.free == NULL || !resolved->string.free(resolved)) {
             buffer->error = "could not free string";
             result = 0;
          }
          break;
       case Cad_stache_list:
          loop.resolved = resolved;
-         loop.empty = (resolved->list.get(resolved, 0) == 0);
+         loop.empty = (resolved->list.get == NULL || resolved->list.get(resolved, 0) == 0);
          break;
       case Cad_stache_partial:
-         s = resolved->partial.get(resolved);
+         s = resolved->partial.get == NULL ? NULL : resolved->partial.get(resolved);
          if (s == NULL) {
             loop.empty = 1;
          } else if (s->next(s)) {
@@ -403,7 +403,7 @@ static int render_stache_loop(struct cad_stache_impl *this, struct buffer *buffe
          } else {
             loop.empty = 0;
          }
-         if (!resolved->partial.free(resolved)) {
+         if (resolved->partial.free == NULL || !resolved->partial.free(resolved)) {
             buffer->error = "could not free partial";
             result = 0;
          }
@@ -453,7 +453,7 @@ static int render_stache_end(struct cad_stache_impl *this, struct buffer *buffer
                loop->loop_index++;
                int get = loop->type == loop_else ? 0 : loop->resolved->list.get(loop->resolved, loop->loop_index);
                if (get == 0) {
-                  if (loop->resolved->list.close(loop->resolved)) {
+                  if (loop->resolved->list.close != NULL && loop->resolved->list.close(loop->resolved)) {
                      buffer->loops->del(buffer->loops, buffer->loops->count(buffer->loops) - 1);
                   } else {
                      buffer->error = "could not close loop list";
