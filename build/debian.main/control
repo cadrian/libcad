@@ -3,7 +3,7 @@ Priority: extra
 Maintainer: Cyril ADRIAN <cyril.adrian@gmail.com>
 Build-Depends: debhelper (>= 8.0.0)
 Build-Depends-Indep: doxygen, texlive-fonts-extra
-Standards-Version: 3.9.3
+Standards-Version: 3.9.8
 Section: libs
 Homepage: http://www.github.com/cadrian/libcad
 Vcs-Git: git://github.com/cadrian/libcad.git
@@ -12,7 +12,7 @@ Vcs-Git: git://github.com/cadrian/libcad.git
 Package: libcad-dev
 Section: libdevel
 Architecture: any
-Depends: libcad0 (= #VERSION#), ${misc:Depends}
+Depends: libcad0 (= ${binary:Version}), ${misc:Depends}
 Description: Cad's Addenda... by Cyril Adrian (aka Cad) -- dev
  A collection of useful tools, in an object-oriented fashion.
  .
@@ -28,9 +28,9 @@ Description: Cad's Addenda... by Cyril Adrian (aka Cad)
  The main library.
 
 Package: libcad0-dbg
-Section: libs
+Section: debug
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: libcad0 (= ${binary:Version}), ${misc:Depends}
 Description: Cad's Addenda... by Cyril Adrian (aka Cad)
  A collection of useful tools, in an object-oriented fashion.
  .
@@ -40,7 +40,7 @@ Package: libcad-doc
 Section: doc
 Architecture: all
 Depends: ${misc:Depends}
-Recommends: libcad0 (= #VERSION#)
+Recommends: libcad0 (= ${binary:Version})
 Description: Cad's Addenda... by Cyril Adrian (aka Cad) -- doc
  A collection of useful tools, in an object-oriented fashion.
  .

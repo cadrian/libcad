@@ -16,5 +16,5 @@ if [[ -n "$1" ]]; then
     done
 
     rm -f debian/files
-    exec make release.$1
-fi
+    make release.$1
+fi | tee $(dirname $(readlink -f $0))/build.log 2>&1

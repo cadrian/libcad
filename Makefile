@@ -35,7 +35,7 @@ install: target/version lib doc
 	mkdir -p debian/tmp/usr/include
 	mkdir -p debian/tmp/usr/share/$(PROJECT)
 	mkdir -p debian/tmp/usr/share/doc/$(PROJECT)-doc
-	strip --strip-unneeded target/$(SOBJ)
+#	strip --strip-unneeded target/$(SOBJ)
 	-cp target/$(SOBJ) debian/tmp/usr/lib/$(SOBJ).$(shell cat target/version)
 	-ln -sf $(SOBJ).$(shell cat target/version) debian/tmp/usr/lib/$(SOBJ).0
 	-ln -sf $(SOBJ).$(shell cat target/version) debian/tmp/usr/lib/$(SOBJ)
@@ -43,10 +43,7 @@ install: target/version lib doc
 	-cp include/*.h debian/tmp/usr/include/
 	-cp -a target/*.pdf target/doc/html debian/tmp/usr/share/doc/$(PROJECT)-doc/
 	-test -e gendoc.sh && cp Makefile release.sh gendoc.sh debian/tmp/usr/share/$(PROJECT)/ # libcad specific
-	env | sort
-
-override_dh_strip:
-	dh_strip --dbg-package=$(shell awk '/^Package: .*-dbg$/ {print $2}' build/debian.main/control)
+#	env | sort
 
 release.main: target/dpkg/release.main release.doc
 
@@ -122,7 +119,7 @@ target/$(PROJECT).pdf: target/doc/latex/refman.pdf
 
 target/doc/latex/refman.pdf: target/doc/latex/Makefile target/doc/latex/version.tex
 	@echo "	 Building PDF"
-	-yes x | $(MAKE) -C target/doc/latex #> target/doc/make.log 2>&1
+	-yes x | $(MAKE) -C target/doc/latex > target/doc/make.log 2>&1
 	cat target/doc/latex/refman.log
 
 target/$(PROJECT)-htmldoc.tgz: target/doc/html/index.html
