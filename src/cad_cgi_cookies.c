@@ -391,7 +391,7 @@ static char *encode_value(const char *value, cad_memory_t memory) {
       }
       c++;
    }
-   char *result = memory.malloc(strlen(value) + 1);
+   char *result = memory.malloc(count);
    c = value;
    v = result;
    while (*c) {
