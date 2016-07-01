@@ -45,6 +45,7 @@ typedef struct {
 static void free_cookie(cookie_impl *this) {
    this->memory.free(this->domain);
    this->memory.free(this->path);
+   this->memory.free(this->value);
    this->memory.free(this);
 }
 

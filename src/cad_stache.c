@@ -703,6 +703,7 @@ static int render(struct cad_stache_impl *this, cad_input_stream_t *input, cad_o
    this->memory.free(this->close);
    buffer_unwind_loops(&buffer);
    buffer.loops->free(buffer.loops);
+   buffer.partials->free(buffer.partials);
    this->memory.free(buffer.data);
    return result;
 }

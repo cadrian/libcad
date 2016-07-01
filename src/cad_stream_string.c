@@ -106,6 +106,7 @@ static int vput(struct cad_output_stream_string *this, const char *format, va_li
           new_string = (char *)this->memory.malloc(new_capacity);
           if (string) {
                strcpy(new_string, string);
+               this->memory.free(string);
           }
           *(this->string) = new_string;
           this->capacity = new_capacity;

@@ -644,6 +644,7 @@ static void free_meta(meta_impl *this) {
    this->memory.free(this->script_name);
    this->memory.free((char*)this->server_protocol.protocol);
    this->memory.free(this->server_software);
+   this->memory.free(this);
 }
 
 static meta_impl *new_meta(cad_memory_t memory) {
