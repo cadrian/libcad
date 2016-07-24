@@ -844,7 +844,7 @@ static void flush_response(response_impl *response) {
    printf("Content-Type: %s\r\n", response->content_type == NULL ? "text/plain" : response->content_type);
    printf("Status: %d\r\n", response->status == 0 ? 200 : response->status);
    if (response->redirect_path != NULL) {
-      if (response->redirect_fragment != NULL) {
+      if (strlen(response->redirect_fragment) > 0) {
          printf("Location: %s#%s\r\n", response->redirect_path, response->redirect_fragment);
       } else {
          printf("Location: %s\r\n", response->redirect_path);
