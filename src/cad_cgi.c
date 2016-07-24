@@ -845,9 +845,9 @@ static void flush_response(response_impl *response) {
    printf("Status: %d\r\n", response->status == 0 ? 200 : response->status);
    if (response->redirect_path != NULL) {
       if (response->redirect_fragment != NULL) {
-         printf("Location: %s\r\n", response->redirect_path);
-      } else {
          printf("Location: %s#%s\r\n", response->redirect_path, response->redirect_fragment);
+      } else {
+         printf("Location: %s\r\n", response->redirect_path);
       }
    }
    response->headers->iterate(response->headers, (cad_hash_iterator_fn)flush_header, response);
