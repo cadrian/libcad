@@ -54,7 +54,7 @@ struct cad_hash_impl {
 static unsigned int string_hash(const char *key) {
      unsigned int result = 0;
      while (*key) {
-          result = result * 13 + *key;
+          result = result * 92821 + *key;
           key++;
      }
      return result;
