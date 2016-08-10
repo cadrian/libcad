@@ -5,7 +5,7 @@
 Cad's Addenda... by Cyril Adrian (aka Cad)
 
 `libCad` provides common services and functions for the utilities I
-maintain (see e.g. https://github.com/cadrian/yacjp)
+maintain (see e.g. [YacJP](https://github.com/cadrian/yacjp) and [Circus](https://github.com/cadrian/circus))
 
 ## Why yet another library
 
