@@ -25,6 +25,10 @@ struct check_data {
      int index;
 };
 
+static int test_salt(void) {
+     return 0;
+}
+
 static void check_iterator(void *hash, int index, const void *key, void *value, struct check_data *expected) {
      char *expected_key = va_arg(expected->data, char*);
      void *expected_value = va_arg(expected->data, void*);
@@ -47,6 +51,8 @@ static void check_hash(cad_hash_t *h, int count, ...) {
 }
 
 int main() {
+     set_hash_salt(test_salt);
+
      cad_hash_t *h = cad_new_hash(stdlib_memory, cad_hash_strings);
      void *foo = (void*)1;
      void *bar = (void*)2;

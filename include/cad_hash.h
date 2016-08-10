@@ -240,6 +240,29 @@ __PUBLIC__ extern cad_hash_keys_t cad_hash_strings;
 __PUBLIC__ cad_hash_t *cad_new_hash(cad_memory_t memory, cad_hash_keys_t keys);
 
 /**
+ * A function of this type is used each time a hash table is
+ * allocated. It provides an offset to the hash table indices.
+ */
+typedef int (*hash_salt_fn)(void);
+
+/**
+ * The default hash salt function: random salt. Enforces hash table
+ * security by not being able to deterministically compute the items
+ * order.
+ *
+ * @see hash_salt_fn
+ */
+__PUBLIC__ int default_hash_salt(void);
+
+/**
+ * Set the hash salt function. Advanced usage only; the default salt
+ * is usually the good one.
+ *
+ * @see default_hash_salt
+ */
+__PUBLIC__ void set_hash_salt(hash_salt_fn salt);
+
+/**
  * @}
  */
 
