@@ -73,8 +73,8 @@ __PUBLIC__ cad_hash_keys_t cad_hash_strings = {
      (cad_hash_keys_free_fn)free,
 };
 
-static cad_hash_key_t hash(const char *key, cad_hash_keys_t keys) {
-     cad_hash_key_t result = { key, keys.hash(key) };
+static cad_hash_key_t hash(const char *key, cad_hash_keys_t keys, int salt) {
+     cad_hash_key_t result = { key, keys.hash(key) + salt };
      return result;
 }
 
@@ -88,14 +88,14 @@ static void next_index_of(index_context_t *context) {
      context->perturb >>= PERTURB_SHIFT;
 }
 
-static int index_of(cad_hash_entry_t *entries, cad_hash_keys_t keys, int capacity, cad_hash_key_t key, int salt, index_context_t *save_context) {
+static int index_of(cad_hash_entry_t *entries, cad_hash_keys_t keys, int capacity, cad_hash_key_t key, index_context_t *save_context) {
      int result;
      const void *k;
      int found;
      cad_hash_keys_compare_fn cmp = keys.compare;
 
      index_context_t context = {
-          key.hash + salt,
+          key.hash,
           key.hash,
      };
 
@@ -124,7 +124,7 @@ static void rehash(struct cad_hash_impl *this) {
      for (i = 0; i < this->capacity; i++) {
           key = this->entries[i].key;
           if (key.key) {
-             index = index_of(this->entries, this->keys, this->capacity, key, this->salt, NULL);
+             index = index_of(this->entries, this->keys, this->capacity, key, NULL);
                if (index < 0) {
                     // broken collision cycle, fix it
                     index = -index - 1;
@@ -155,7 +155,7 @@ static void grow(struct cad_hash_impl *this, int grow_factor) {
           for (i = 0; i < this->capacity; i++) {
                field = this->entries[i];
                if (field.key.key) {
-                    index = -index_of(new_entries, this->keys, new_capacity, field.key, this->salt, NULL) - 1;
+                    index = -index_of(new_entries, this->keys, new_capacity, field.key, NULL) - 1;
                     new_entries[index] = field;
                }
           }
@@ -197,7 +197,7 @@ static void *get(struct cad_hash_impl *this, const void *key) {
      void *result = NULL;
      int index;
      if (this->capacity) {
-          index = index_of(this->entries, this->keys, this->capacity, hash(key, this->keys), this->salt, NULL);
+          index = index_of(this->entries, this->keys, this->capacity, hash(key, this->keys, this->salt), NULL);
           if (index >= 0) {
                result = this->entries[index].value;
           }
@@ -208,18 +208,18 @@ static void *get(struct cad_hash_impl *this, const void *key) {
 static void *set(struct cad_hash_impl *this, const void *key, void *value) {
      void *result = NULL;
      int index;
-     cad_hash_key_t hkey = hash(key, this->keys);
+     cad_hash_key_t hkey = hash(key, this->keys, this->salt);
      if (this->capacity == 0) {
           grow(this, 2);
      }
-     index = index_of(this->entries, this->keys, this->capacity, hkey, this->salt, NULL);
+     index = index_of(this->entries, this->keys, this->capacity, hkey, NULL);
      if (index >= 0) {
           result = this->entries[index].value;
      }
      else {
           if (this->count * 3 >= this->capacity * 2) {
                grow(this, 2);
-               index = index_of(this->entries, this->keys, this->capacity, hkey, this->salt, NULL);
+               index = index_of(this->entries, this->keys, this->capacity, hkey, NULL);
           }
           index = -index - 1;
           hkey.key = this->keys.clone(key);
@@ -232,8 +232,8 @@ static void *set(struct cad_hash_impl *this, const void *key, void *value) {
 
 static void *del(struct cad_hash_impl *this, const void *key) {
      void *result = NULL;
-     cad_hash_key_t hkey = hash(key, this->keys);
-     int index = index_of(this->entries, this->keys, this->capacity, hkey, this->salt, NULL);
+     cad_hash_key_t hkey = hash(key, this->keys, this->salt);
+     int index = index_of(this->entries, this->keys, this->capacity, hkey, NULL);
 
      if (index >= 0) {
           result = this->entries[index].value;
@@ -296,7 +296,7 @@ int default_hash_salt(void) {
    return rand();
 }
 
-static hash_salt_fn salt = default_hash_salt;
+static hash_salt_fn hash_salt = default_hash_salt;
 
 __PUBLIC__ cad_hash_t *cad_new_hash(cad_memory_t memory, cad_hash_keys_t keys) {
      struct cad_hash_impl *result = (struct cad_hash_impl *)memory.malloc(sizeof(struct cad_hash_impl));
@@ -306,11 +306,11 @@ __PUBLIC__ cad_hash_t *cad_new_hash(cad_memory_t memory, cad_hash_keys_t keys) {
      result->keys     = keys;
      result->capacity = 0;
      result->count    = 0;
-     result->salt     = salt();
+     result->salt     = hash_salt();
      result->entries  = NULL;
      return (cad_hash_t*)result;
 }
 
 __PUBLIC__ void set_hash_salt(hash_salt_fn new_salt) {
-   salt = new_salt == NULL ? default_hash_salt : new_salt;
+   hash_salt = new_salt == NULL ? default_hash_salt : new_salt;
 }
