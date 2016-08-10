@@ -36,8 +36,6 @@
 
 #define PERTURB_SHIFT 5
 
-static hash_salt_fn salt;
-
 typedef struct cad_hash_key {
      const void *key;
      unsigned int hash;
@@ -298,6 +296,8 @@ int default_hash_salt(void) {
    return rand();
 }
 
+static hash_salt_fn salt = default_hash_salt;
+
 __PUBLIC__ cad_hash_t *cad_new_hash(cad_memory_t memory, cad_hash_keys_t keys) {
      struct cad_hash_impl *result = (struct cad_hash_impl *)memory.malloc(sizeof(struct cad_hash_impl));
      if (!result) return NULL;
@@ -306,11 +306,11 @@ __PUBLIC__ cad_hash_t *cad_new_hash(cad_memory_t memory, cad_hash_keys_t keys) {
      result->keys     = keys;
      result->capacity = 0;
      result->count    = 0;
-     result->salt     = salt == NULL ? default_hash_salt() : salt();
+     result->salt     = salt();
      result->entries  = NULL;
      return (cad_hash_t*)result;
 }
 
 __PUBLIC__ void set_hash_salt(hash_salt_fn new_salt) {
-   salt = new_salt;
+   salt = new_salt == NULL ? default_hash_salt : new_salt;
 }
