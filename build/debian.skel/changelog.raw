@@ -1,4 +1,4 @@
-libcad (0.0.3#SNAPSHOT#) unstable; urgency=low
+libcad (0.0.3) unstable; urgency=low
 
   * Arrays
   * Events selector using ppoll(2)
