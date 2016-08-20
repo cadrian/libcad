@@ -1,3 +1,9 @@
+libcad (0.0.4#SNAPSHOT#) unstable; urgency=low
+
+  * Bug fixes
+
+ -- Cyril ADRIAN <cyril.adrian@gmail.com>  #DATE#
+
 libcad (0.0.3) unstable; urgency=low
 
   * Arrays
