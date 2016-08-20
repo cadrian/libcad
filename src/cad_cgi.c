@@ -840,7 +840,7 @@ static void flush_header(void *hash, int index, const char *key, const char *val
    printf("%s: %s\r\n", key, value == NULL ? "" : value);
 }
 
-static void flush_response(response_impl *response) {
+static int flush_response(response_impl *response) {
    printf("Content-Type: %s\r\n", response->content_type == NULL ? "text/plain" : response->content_type);
    printf("Status: %d\r\n", response->status == 0 ? 200 : response->status);
    if (response->redirect_path != NULL) {
@@ -855,6 +855,7 @@ static void flush_response(response_impl *response) {
    putchar('\r');
    putchar('\n');
    flush_body(response->body);
+   return 0;
 }
 
 static cad_cgi_response_t response_fn = {
