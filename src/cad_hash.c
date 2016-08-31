@@ -196,7 +196,7 @@ static void clean(struct cad_hash_impl *this, cad_hash_iterator_fn iterator, voi
 static void *get(struct cad_hash_impl *this, const void *key) {
      void *result = NULL;
      int index;
-     if (this->capacity) {
+     if (this->count) {
           index = index_of(this->entries, this->keys, this->capacity, hash(key, this->keys, this->salt), NULL);
           if (index >= 0) {
                result = this->entries[index].value;
@@ -232,16 +232,18 @@ static void *set(struct cad_hash_impl *this, const void *key, void *value) {
 
 static void *del(struct cad_hash_impl *this, const void *key) {
      void *result = NULL;
-     cad_hash_key_t hkey = hash(key, this->keys, this->salt);
-     int index = index_of(this->entries, this->keys, this->capacity, hkey, NULL);
+     if (this->count) {
+          cad_hash_key_t hkey = hash(key, this->keys, this->salt);
+          int index = index_of(this->entries, this->keys, this->capacity, hkey, NULL);
 
-     if (index >= 0) {
-          result = this->entries[index].value;
-          this->keys.free((void*)this->entries[index].key.key);
-          this->entries[index].key.key = NULL;
-          this->entries[index].value   = NULL;
-          this->count--;
-          rehash(this);
+          if (index >= 0) {
+               result = this->entries[index].value;
+               this->keys.free((void*)this->entries[index].key.key);
+               this->entries[index].key.key = NULL;
+               this->entries[index].value   = NULL;
+               this->count--;
+               rehash(this);
+          }
      }
      return result;
 }
