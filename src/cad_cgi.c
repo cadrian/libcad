@@ -53,6 +53,7 @@ typedef struct {
    int server_port;
    cad_cgi_server_protocol_t server_protocol;
    char *server_software;
+   cad_input_stream_t *in;
 } meta_impl;
 
 static cad_cgi_auth_type_e auth_type(meta_impl *this) {
@@ -400,7 +401,7 @@ static cad_hash_t *query_string(meta_impl *this) {
 static cad_hash_t *input_as_form(meta_impl *this) {
    cad_hash_t *result = this->input_as_form;
    if (result == NULL) {
-      cad_input_stream_t *in = new_cad_input_stream_from_file_descriptor(STDIN_FILENO, this->memory);
+      cad_input_stream_t *in = this->in;
       if (in != NULL) {
          result = this->input_as_form = parse_query_or_form(this, in);
          in->free(in);
@@ -647,7 +648,7 @@ static void free_meta(meta_impl *this) {
    this->memory.free(this);
 }
 
-static meta_impl *new_meta(cad_memory_t memory) {
+static meta_impl *new_meta(cad_memory_t memory, cad_input_stream_t *in) {
    meta_impl *result = memory.malloc(sizeof(meta_impl));
    if (!result) return NULL;
 
@@ -685,6 +686,7 @@ static meta_impl *new_meta(cad_memory_t memory) {
    result->server_protocol.minor = 0;
    result->server_protocol.protocol = NULL;
    result->server_software = NULL;
+   result->in = in;
 
    return result;
 }
@@ -703,6 +705,8 @@ typedef struct {
    char *content_type;
    cad_hash_t *headers;
    meta_impl *meta;
+   cad_output_stream_t *out;
+   int fd;
 } response_impl;
 
 static void clean_header(void *hash, int index, const char *key, char *value, response_impl *response) {
@@ -731,7 +735,7 @@ static cad_cgi_meta_t *meta_variables(response_impl *this) {
 }
 
 static int response_fd(response_impl *this) {
-   return STDOUT_FILENO;
+   return this->fd;
 }
 
 static cad_output_stream_t *body(response_impl *this) {
@@ -795,38 +799,35 @@ static int set_header(response_impl *this, const char *field, const char *value)
    return result;
 }
 
-static void flush_body(const char *body) {
+static void flush_body(const char *body, cad_output_stream_t *out) {
    int status = 0;
    while (*body) {
       switch(status) {
       case 0:
          switch(*body) {
          case '\r':
-            putchar('\r');
+            out->put(out, "\r");
             status = 1;
             break;
          case '\n':
-            putchar('\r');
-            putchar('\n');
+            out->put(out, "\r\n");
             break;
          default:
-            putchar(*body);
+            out->put(out, "%c", *body);
             break;
          }
          break;
       case 1:
          switch(*body) {
          case '\r':
-            putchar('\n');
-            putchar('\r');
+            out->put(out, "\n\r");
             break;
          case '\n':
-            putchar('\n');
+            out->put(out, "\n");
             status = 0;
             break;
          default:
-            putchar('\n');
-            putchar(*body);
+            out->put(out, "\n%c", *body);
             status = 0;
             break;
          }
@@ -836,8 +837,8 @@ static void flush_body(const char *body) {
    }
 }
 
-static void flush_header(void *hash, int index, const char *key, const char *value) {
-   printf("%s: %s\r\n", key, value == NULL ? "" : value);
+static void flush_header(void *hash, int index, const char *key, const char *value, response_impl *response) {
+   response->out->put(response->out, "%s: %s\r\n", key, value == NULL ? "" : value);
 }
 
 static int flush_response(response_impl *response) {
@@ -851,10 +852,9 @@ static int flush_response(response_impl *response) {
       }
    }
    response->headers->iterate(response->headers, (cad_hash_iterator_fn)flush_header, response);
-   flush_cookies(response->cookies);
-   putchar('\r');
-   putchar('\n');
-   flush_body(response->body);
+   flush_cookies(response->cookies, response->out);
+   response->out->put(response->out, "\r\n");
+   flush_body(response->body, response->out);
    return 0;
 }
 
@@ -871,7 +871,7 @@ static cad_cgi_response_t response_fn = {
    (cad_cgi_response_set_header_fn) set_header,
 };
 
-static response_impl *new_cad_cgi_response(cad_memory_t memory) {
+static response_impl *new_cad_cgi_response(cad_memory_t memory, cad_input_stream_t *in, int fd, cad_output_stream_t *out) {
    response_impl *result = memory.malloc(sizeof(response_impl));
    if (!result) return NULL;
    result->fn = response_fn;
@@ -884,7 +884,9 @@ static response_impl *new_cad_cgi_response(cad_memory_t memory) {
    result->status = 0;
    result->content_type = NULL;
    result->headers = cad_new_hash(memory, cad_hash_strings);
-   result->meta = new_meta(memory);
+   result->meta = new_meta(memory, in);
+   result->fd = fd;
+   result->out = out;
    return result;
 }
 
@@ -895,14 +897,26 @@ typedef struct {
    cad_memory_t memory;
    cad_cgi_handle_cb handler;
    void *data;
+   cad_input_stream_t *in;
+   cad_output_stream_t *out;
+   int fd;
 } cgi_impl;
 
 static void free_cgi(cgi_impl *this) {
+   if (this->fd == STDIN_FILENO) {
+      this->out->free(this->out);
+      this->in->free(this->in);
+   }
    this->memory.free(this);
 }
 
 static response_impl *run(cgi_impl *this) {
-   response_impl *result = new_cad_cgi_response(this->memory);
+   response_impl *result;
+   if (this->fd == STDIN_FILENO) {
+      result = new_cad_cgi_response(this->memory, this->in, STDOUT_FILENO, this->out);
+   } else {
+      result = new_cad_cgi_response(this->memory, this->in, -1, this->out);
+   }
    if (result) {
       int status = (this->handler)((cad_cgi_t*)this, (cad_cgi_response_t*)result, this->data);
       if (status != 0) {
@@ -917,7 +931,7 @@ static response_impl *run(cgi_impl *this) {
 }
 
 static int cgi_fd(cgi_impl *this) {
-   return STDIN_FILENO;
+   return this->fd;
 }
 
 static cad_cgi_t cgi_fn = {
@@ -933,5 +947,21 @@ cad_cgi_t *new_cad_cgi(cad_memory_t memory, cad_cgi_handle_cb handler, void *dat
    result->memory = memory;
    result->handler = handler;
    result->data = data;
+   result->in = new_cad_input_stream_from_file_descriptor(STDIN_FILENO, memory);
+   result->out = new_cad_output_stream_from_file_descriptor(STDOUT_FILENO, memory);
+   result->fd = STDIN_FILENO;
+   return (cad_cgi_t*)result;
+}
+
+cad_cgi_t *new_cad_cgi_stream(cad_memory_t memory, cad_cgi_handle_cb handler, void *data, cad_input_stream_t *in, cad_output_stream_t *out) {
+   cgi_impl *result = memory.malloc(sizeof(cgi_impl));
+   if (!result) return NULL;
+   result->fn = cgi_fn;
+   result->memory = memory;
+   result->handler = handler;
+   result->data = data;
+   result->fd = -1;
+   result->in = in;
+   result->out = out;
    return (cad_cgi_t*)result;
 }

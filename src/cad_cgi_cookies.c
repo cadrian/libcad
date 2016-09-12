@@ -422,39 +422,38 @@ static char *encode_value(const char *value, cad_memory_t memory) {
    return result;
 }
 
-static void flush_cookie(void *hash, int index, const char *key, cookie_impl *cookie) {
+static void flush_cookie(void *hash, int index, const char *key, cookie_impl *cookie, cad_output_stream_t *out) {
    if (cookie->changed) {
       char *encoded_value = encode_value(cookie->value, cookie->memory);
-      printf("Set-Cookie: %s=%s", cookie->name, cookie->value == NULL ? "" : encoded_value);
+      out->put(out, "Set-Cookie: %s=%s", cookie->name, cookie->value == NULL ? "" : encoded_value);
       cookie->memory.free(encoded_value);
 
       if (cookie->expires > 0) {
          char buf[30];
          rfc1123(cookie->expires, buf, 30);
-         printf("; Expires=%s", buf);
+         out->put(out, "; Expires=%s", buf);
       }
       if (cookie->max_age > 0) {
-         printf("; Max-Age=%d", cookie->max_age);
+         out->put(out, "; Max-Age=%d", cookie->max_age);
       }
       if (cookie->domain != NULL) {
-         printf("; Domain=%s", cookie->domain);
+         out->put(out, "; Domain=%s", cookie->domain);
       }
       if (cookie->path != NULL) {
-         printf("; Path=%s", cookie->path);
+         out->put(out, "; Path=%s", cookie->path);
       }
       if (cookie->flag & Cookie_secure) {
-         printf("; Secure");
+         out->put(out, "; Secure");
       }
       if (cookie->flag & Cookie_http_only) {
-         printf("; HttpOnly");
+         out->put(out, "; HttpOnly");
       }
-      putchar('\r');
-      putchar('\n');
+      out->put(out, "\r\n");
    }
    cookie->changed = 0;
 }
 
-void flush_cookies(cad_cgi_cookies_t *cookies) {
+void flush_cookies(cad_cgi_cookies_t *cookies, cad_output_stream_t *out) {
    cookies_impl *this = (cookies_impl*)cookies;
-   this->jar->iterate(this->jar, (cad_hash_iterator_fn)flush_cookie, this);
+   this->jar->iterate(this->jar, (cad_hash_iterator_fn)flush_cookie, out);
 }

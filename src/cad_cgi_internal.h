@@ -24,5 +24,5 @@
 #include "cad_cgi.h"
 
 cad_cgi_cookies_t *new_cookies(cad_memory_t memory);
-void flush_cookies(cad_cgi_cookies_t *cookies);
+void flush_cookies(cad_cgi_cookies_t *cookies, cad_output_stream_t *out);
 void free_cookies(cad_cgi_cookies_t *this);

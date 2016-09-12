@@ -615,6 +615,19 @@ typedef int (*cad_cgi_handle_cb)(cad_cgi_t *cgi, cad_cgi_response_t *response, v
 __PUBLIC__ cad_cgi_t *new_cad_cgi(cad_memory_t memory, cad_cgi_handle_cb handler, void *data);
 
 /**
+ * Creates a new CGI context using the provided handler and input stream.
+ *
+ * @param[in] memory the memory manager
+ * @param[in] handler the CGI handler
+ * @param[in] data the handler data
+ * @param[in] in the input stream
+ * @param[in] out the output stream
+ *
+ * @return a new CGI context
+ */
+__PUBLIC__ cad_cgi_t *new_cad_cgi_stream(cad_memory_t memory, cad_cgi_handle_cb handler, void *data, cad_input_stream_t *in, cad_output_stream_t *out);
+
+/**
  * Creates a new cookie with the given name.
  *
  * @param[in] memory the memory manager
