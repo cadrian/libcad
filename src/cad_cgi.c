@@ -623,20 +623,20 @@ static void clean_string(void *hash, int index, const char *key, char *value, me
 }
 
 static void free_meta(meta_impl *this) {
+   if (this->input_as_form != NULL) {
+      this->input_as_form->clean(this->input_as_form, (cad_hash_iterator_fn)clean_string, this);
+      this->input_as_form->free(this->input_as_form);
+   }
+   if (this->query_string != NULL) {
+      this->query_string->clean(this->query_string, (cad_hash_iterator_fn)clean_string, this);
+      this->query_string->free(this->query_string);
+   }
    this->memory.free((char*)this->content_type.type);
    this->memory.free((char*)this->content_type.subtype);
    this->content_type.parameters->clean(this->content_type.parameters, (cad_hash_iterator_fn)clean_string, this);
    this->content_type.parameters->free(this->content_type.parameters);
    this->memory.free(this->path_info);
    this->memory.free(this->path_translated);
-   if (this->query_string != NULL) {
-      this->query_string->clean(this->query_string, (cad_hash_iterator_fn)clean_string, this);
-      this->query_string->free(this->query_string);
-   }
-   if (this->input_as_form != NULL) {
-      this->input_as_form->clean(this->input_as_form, (cad_hash_iterator_fn)clean_string, this);
-      this->input_as_form->free(this->input_as_form);
-   }
    this->memory.free(this->remote_addr);
    this->memory.free(this->remote_host);
    this->memory.free(this->remote_ident);
