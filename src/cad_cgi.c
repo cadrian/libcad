@@ -269,6 +269,12 @@ static const char *path_translated(meta_impl *this) {
    return result;
 }
 
+static char *no_value(cad_memory_t memory) {
+   char *result = memory.malloc(1);
+   result[0] = 0;
+   return result;
+}
+
 static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) {
    cad_hash_t *result = cad_new_hash(this->memory, cad_hash_strings);
    int s = 0;
@@ -282,9 +288,13 @@ static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) 
       case 0: // reading attribute
          switch(c) {
          case '=':
-            out->free(out);
-            out = new_cad_output_stream_from_string(&value, this->memory);
-            s = 10;
+            if (attribute == NULL) {
+               s = -1;
+            } else {
+               out->free(out);
+               out = new_cad_output_stream_from_string(&value, this->memory);
+               s = 10;
+            }
             break;
          case '%':
             encoded = 0;
@@ -302,7 +312,7 @@ static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) 
          switch(c) {
          case '&':
          case '\n':
-            result->set(result, attribute, value);
+            result->set(result, attribute, value == NULL ? no_value(this->memory) : value);
             this->memory.free(attribute);
             attribute = value = NULL;
             out->free(out);
@@ -373,7 +383,7 @@ static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) 
       }
    }
    if (s == 10) {
-      result->set(result, attribute, value);
+      result->set(result, attribute, value == NULL ? no_value(this->memory) : value);
       this->memory.free(attribute);
    } else {
       this->memory.free(attribute);
@@ -842,13 +852,13 @@ static void flush_header(void *hash, int index, const char *key, const char *val
 }
 
 static int flush_response(response_impl *response) {
-   printf("Content-Type: %s\r\n", response->content_type == NULL ? "text/plain" : response->content_type);
-   printf("Status: %d\r\n", response->status == 0 ? 200 : response->status);
+   response->out->put(response->out, "Content-Type: %s\r\n", response->content_type == NULL ? "text/plain" : response->content_type);
+   response->out->put(response->out, "Status: %d\r\n", response->status == 0 ? 200 : response->status);
    if (response->redirect_path != NULL) {
       if (strlen(response->redirect_fragment) > 0) {
-         printf("Location: %s#%s\r\n", response->redirect_path, response->redirect_fragment);
+         response->out->put(response->out, "Location: %s#%s\r\n", response->redirect_path, response->redirect_fragment);
       } else {
-         printf("Location: %s\r\n", response->redirect_path);
+         response->out->put(response->out, "Location: %s\r\n", response->redirect_path);
       }
    }
    response->headers->iterate(response->headers, (cad_hash_iterator_fn)flush_header, response);
@@ -920,12 +930,12 @@ static response_impl *run(cgi_impl *this) {
    if (result) {
       int status = (this->handler)((cad_cgi_t*)this, (cad_cgi_response_t*)result, this->data);
       if (status != 0) {
-         printf("Status: 500\r\nContent-Type: text/plain\r\n\r\nInternal error: handler failed with status %d\r\n", status);
+         result->out->put(result->out, "Status: 500\r\nContent-Type: text/plain\r\n\r\nInternal error: handler failed with status %d\r\n", status);
          free_response(result);
          result = NULL;
       }
    } else {
-      printf("Status: 500\r\nContent-Type: text/plain\r\n\r\nInternal error: NULL response\r\n");
+      result->out->put(result->out, "Status: 500\r\nContent-Type: text/plain\r\n\r\nInternal error: NULL response\r\n");
    }
    return result;
 }
