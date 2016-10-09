@@ -277,28 +277,28 @@ static char *no_value(cad_memory_t memory) {
 
 static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) {
    cad_hash_t *result = cad_new_hash(this->memory, cad_hash_strings);
-   int s = 0;
+   int s = 1;
    char *attribute = NULL;
    char *value = NULL;
    cad_output_stream_t *out = new_cad_output_stream_from_string(&attribute, this->memory);
    char encoded = 0;
    int c = in->item(in);
-   while (c != -1 && s >= 0) {
+   while (c != -1 && s > 0) {
       switch(s) {
-      case 0: // reading attribute
+      case 1: // reading attribute
          switch(c) {
          case '=':
             if (attribute == NULL) {
-               s = -1;
+               s = -s;
             } else {
                out->free(out);
                out = new_cad_output_stream_from_string(&value, this->memory);
-               s = 10;
+               s = 11;
             }
             break;
          case '%':
             encoded = 0;
-            s = 1;
+            s = 2;
             break;
          case '+':
             out->put(out, " ");
@@ -308,20 +308,23 @@ static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) 
             break;
          }
          break;
-      case 10: // reading value
+      case 11: // reading value
          switch(c) {
          case '&':
          case '\n':
-            result->set(result, attribute, value == NULL ? no_value(this->memory) : value);
+            if (value == NULL) {
+               value = no_value(this->memory);
+            }
+            result->set(result, attribute, value);
             this->memory.free(attribute);
             attribute = value = NULL;
             out->free(out);
             out = new_cad_output_stream_from_string(&attribute, this->memory);
-            s = 0;
+            s = 1;
             break;
          case '%':
             encoded = 0;
-            s = 11;
+            s = 12;
             break;
          case '+':
             out->put(out, " ");
@@ -331,7 +334,7 @@ static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) 
             break;
          }
          break;
-      case 1: case 11: // reading first hex
+      case 2: case 12: // reading first hex
          switch(c) {
          case '0': case '1': case '2': case '3': case '4':
          case '5': case '6': case '7': case '8': case '9':
@@ -347,10 +350,10 @@ static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) 
             s++;
             break;
          default:
-            s = -1;
+            s = -s;
          }
          break;
-      case 2: case 12: // reading second hex
+      case 3: case 13: // reading second hex
          switch(c) {
          case '0': case '1': case '2': case '3': case '4':
          case '5': case '6': case '7': case '8': case '9':
@@ -372,18 +375,21 @@ static cad_hash_t *parse_query_or_form(meta_impl *this, cad_input_stream_t *in) 
             s -= 2;
             break;
          default:
-            s = -1;
+            s = -s;
          }
          break;
       }
       if (in->next(in)) {
-         s = -1;
+         s = -s;
       } else {
          c = in->item(in);
       }
    }
-   if (s == 10) {
-      result->set(result, attribute, value == NULL ? no_value(this->memory) : value);
+   if (s == 11 || s == -11) {
+      if (value == NULL) {
+         value = no_value(this->memory);
+      }
+      result->set(result, attribute, value);
       this->memory.free(attribute);
    } else {
       this->memory.free(attribute);
